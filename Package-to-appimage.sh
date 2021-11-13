@@ -28,8 +28,12 @@ PACKAGE=""
 PLUGINS=""
 PLUGINS_COUNT=0      
 
+PACKAGE_TYPE=""
+
 DISTRIBUTION=""
-PACKAGE_MANAGER_COMMAND=""
+PACKAGE_MANAGER_FILE_INSTALL=""
+PACKAGE_MANAGER_REPO_INSTALL=""
+PACKAGE_MANAGER_UPDATE=""
 VENDOR=""
 
 # Close programm without arguments
@@ -73,7 +77,11 @@ for plugin in ${PLUGINS[*]}
 done
 
 # Checking if package exist and correct
-if [ \"$PACKAGE\" = \"\" ]
+if [ ! -f "$PACKAGE" ]
+then echo -e "\tPackage is not exist"; exit 1;
+fi
+
+if [ "$PACKAGE" = \"\" ]
 then echo -e "\tPlease, specify the package"; exit 1;
 fi
 
@@ -82,12 +90,20 @@ PACKAGE_TYPE=$(file -b "$PACKAGE" | cut -c 1-3)
 if [ $PACKAGE_TYPE = "RPM" ]
     then 
     VENDOR=$(rpm -qip "$PACKAGE" | grep -e "Vendor" | awk -F : '{ print $2 }' | cut -c2-)
-    
+    PACKAGE_NAME=$(rpm -qip "$PACKAGE" | grep -e "Name" | awk -F : '{ print $2 }' | cut -c2-)
+
     if [ "$VENDOR" = "ALT Linux Team" ]
         then
         DISTRIBUTION="alt"
-        PACKAGE_MANAGER_COMMAND="apt-get install -f "
-
+        PACKAGE_MANAGER_UPDATE="apt-get update"
+        PACKAGE_MANAGER_REPO_INSTALL="apt-get install -y"
+        PACKAGE_MANAGER_FILE_INSTALL="apt-get install -fy"
+    elif [ "$VENDOR" = "Fedora Project" ]
+        then
+        DISTRIBUTION="fedora"
+        PACKAGE_MANAGER_UPDATE="dnf update -y"
+        PACKAGE_MANAGER_REPO_INSTALL="dnf install -y"
+        PACKAGE_MANAGER_FILE_INSTALL="dnf install -y"
     else
         echo "ERROR: Unsupported vendor"
         exit 1
@@ -101,8 +117,11 @@ fi
 # Running docker
 cp $PACKAGE ./mnt/
 # Saving name of package
-PACKAGE_NAME=$(echo "$PACKAGE" | awk -F / '{print $NF}')
+PACKAGE_FILE=$(echo "$PACKAGE" | awk -F / '{print $NF}')
 
-docker run -ti --rm -v "$(pwd)/mnt:/mnt" $DISTRIBUTION /bin/bash /mnt/conversion.sh --package-manager "$PACKAGE_MANAGER_COMMAND" $plugins_with_arguments
+docker run -ti --rm -v "$(pwd)/mnt:/mnt" --security-opt seccomp=unconfined $DISTRIBUTION /bin/bash /mnt/conversion.sh  \
+--package-manager-update "$PACKAGE_MANAGER_UPDATE"  --package-manager-file-install "$PACKAGE_MANAGER_FILE_INSTALL" \
+--package-manager-repo-install "$PACKAGE_MANAGER_REPO_INSTALL" --package-file "$PACKAGE_FILE" --package-type "$PACKAGE_TYPE" \
+--package "$PACKAGE_NAME" --distribution "$DISTRIBUTION" $plugins_with_arguments
 
-rm -f ./mnt/$PACKAGE_NAME
+rm -f ./mnt/$PACKAGE_FILE
