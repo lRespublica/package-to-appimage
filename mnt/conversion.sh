@@ -131,6 +131,8 @@ for plugin in ${PLUGINS[*]}
         then $PACKAGE_MANAGER_REPO_INSTALL qt5-base-devel qt5-declarative-devel
         elif [ "$DISTRIBUTION" = "fedora" ]
         then $PACKAGE_MANAGER_REPO_INSTALL qt5-qtbase-devel qt5-qtdeclarative-devel
+        elif [ "$DISTRIBUTION" = "opensuse" ]
+        then $PACKAGE_MANAGER_REPO_INSTALL libqt5-qtbase-devel libqt5-qtdeclarative-devel
         fi
 
         cd /tmp/linuxdeploy/plugins
@@ -147,7 +149,7 @@ for plugin in ${PLUGINS[*]}
         #Installing dependencies
         if [ "$DISTRIBUTION" = "alt" ]
         then $PACKAGE_MANAGER_REPO_INSTALL libgtk+3-devel librsvg-devel patchelf
-        elif [ "$DISTRIBUTION" = "fedora" ]
+        elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ]
         then $PACKAGE_MANAGER_REPO_INSTALL gtk3-devel librsvg2-devel patchelf
         fi
 
@@ -161,6 +163,8 @@ for plugin in ${PLUGINS[*]}
         then $PACKAGE_MANAGER_REPO_INSTALL libncurses-devel libncurses++-devel termutils-devel
         elif [ "$DISTRIBUTION" = "fedora" ]
         then $PACKAGE_MANAGER_REPO_INSTALL ncurses-devel ncurses-c++-libs
+        elif [ "$DISTRIBUTION" = "opensuse" ]
+        then $PACKAGE_MANAGER_REPO_INSTALL ncurses-devel 
         fi
 
         then
@@ -172,7 +176,7 @@ for plugin in ${PLUGINS[*]}
 
         if [ "$DISTRIBUTION" = "alt" ]
         then $PACKAGE_MANAGER_REPO_INSTALL gstreamer-devel patchelf
-        elif [ "$DISTRIBUTION" = "fedora" ]
+        elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ]
         then $PACKAGE_MANAGER_REPO_INSTALL gstreamer-devel patchelf
         fi
 
@@ -233,7 +237,7 @@ if [[ $PACKAGE_TYPE = "RPM" ]]
 
         if [ "$DISTRIBUTION" = "alt" ]
         then $PACKAGE_MANAGER_REPO_INSTALL icon-theme-adwaia
-        elif [ "$DISTRIBUTION" = "fedora" ]
+        elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ]
         then $PACKAGE_MANAGER_REPO_INSTALL adwaita-icon-theme
         fi
         
@@ -242,7 +246,7 @@ if [[ $PACKAGE_TYPE = "RPM" ]]
         if [[ "$ICON_NAME" = "" ]]
         then
             # Set same name like 
-            ICON_NAME="$PACKAGE_NAME"
+            ICON_NAME="$PACKAGE"
         fi
         mkdir /tmp/AppDir/usr/share/icons
         cp /usr/share/icons/Adwaita/256x256/legacy/user-info.png /tmp/AppDir/usr/share/icons/$ICON_NAME.png
@@ -254,7 +258,7 @@ if [[ $PACKAGE_TYPE = "RPM" ]]
 fi
 
 # If there are no desktop file
-if [ "$DESKTOP_FILE" = "" ]
+if [ "$DESKTOP_FILE" = "/tmp/AppDir" ]
     then
     # Use --create-desktop-file option
     echo "/tmp/linuxdeploy/AppRun --appdir /tmp/AppDir --executable $EXECUTABLE --create-desktop-file --icon-file $ICON $plugins_with_arguments --output appimage"

@@ -104,6 +104,12 @@ if [ $PACKAGE_TYPE = "RPM" ]
         PACKAGE_MANAGER_UPDATE="dnf update -y"
         PACKAGE_MANAGER_REPO_INSTALL="dnf install -y"
         PACKAGE_MANAGER_FILE_INSTALL="dnf install -y"
+    elif [ "$VENDOR" = "openSUSE" ]
+        then
+        DISTRIBUTION="opensuse/leap"
+        PACKAGE_MANAGER_UPDATE="zypper update -y"
+        PACKAGE_MANAGER_REPO_INSTALL="zypper install -y"
+        PACKAGE_MANAGER_FILE_INSTALL="zypper install -y"
     else
         echo "ERROR: Unsupported vendor"
         exit 1
