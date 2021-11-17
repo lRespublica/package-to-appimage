@@ -129,10 +129,12 @@ for plugin in ${PLUGINS[*]}
         #Installing dependencies
         if [ "$DISTRIBUTION" = "alt" ]
         then $PACKAGE_MANAGER_REPO_INSTALL qt5-base-devel qt5-declarative-devel
-        elif [ "$DISTRIBUTION" = "fedora" ]
+        elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "centos" ]
         then $PACKAGE_MANAGER_REPO_INSTALL qt5-qtbase-devel qt5-qtdeclarative-devel
         elif [ "$DISTRIBUTION" = "opensuse" ]
         then $PACKAGE_MANAGER_REPO_INSTALL libqt5-qtbase-devel libqt5-qtdeclarative-devel
+        elif [ "$DISTRIBUTION" = "mageia" ]
+        then $PACKAGE_MANAGER_REPO_INSTALL libqwt-qt5-devel
         fi
 
         cd /tmp/linuxdeploy/plugins
@@ -149,7 +151,7 @@ for plugin in ${PLUGINS[*]}
         #Installing dependencies
         if [ "$DISTRIBUTION" = "alt" ]
         then $PACKAGE_MANAGER_REPO_INSTALL libgtk+3-devel librsvg-devel patchelf
-        elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ]
+        elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ]
         then $PACKAGE_MANAGER_REPO_INSTALL gtk3-devel librsvg2-devel patchelf
         fi
 
@@ -161,9 +163,9 @@ for plugin in ${PLUGINS[*]}
 
         if [ "$DISTRIBUTION" = "alt" ]
         then $PACKAGE_MANAGER_REPO_INSTALL libncurses-devel libncurses++-devel termutils-devel
-        elif [ "$DISTRIBUTION" = "fedora" ]
+        elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "centos" ]
         then $PACKAGE_MANAGER_REPO_INSTALL ncurses-devel ncurses-c++-libs
-        elif [ "$DISTRIBUTION" = "opensuse" ]
+        elif [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "mageia" ]
         then $PACKAGE_MANAGER_REPO_INSTALL ncurses-devel 
         fi
 
@@ -174,9 +176,7 @@ for plugin in ${PLUGINS[*]}
         #Downloading gstreamer plugin and adding it in linuxdeploy
         then
 
-        if [ "$DISTRIBUTION" = "alt" ]
-        then $PACKAGE_MANAGER_REPO_INSTALL gstreamer-devel patchelf
-        elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ]
+        if [ "$DISTRIBUTION" = "alt" ] || [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ]
         then $PACKAGE_MANAGER_REPO_INSTALL gstreamer-devel patchelf
         fi
 
@@ -237,7 +237,7 @@ if [[ $PACKAGE_TYPE = "RPM" ]]
 
         if [ "$DISTRIBUTION" = "alt" ]
         then $PACKAGE_MANAGER_REPO_INSTALL icon-theme-adwaia
-        elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ]
+        elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ]
         then $PACKAGE_MANAGER_REPO_INSTALL adwaita-icon-theme
         fi
         

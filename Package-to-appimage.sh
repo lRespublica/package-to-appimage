@@ -98,18 +98,34 @@ if [ $PACKAGE_TYPE = "RPM" ]
         PACKAGE_MANAGER_UPDATE="apt-get update"
         PACKAGE_MANAGER_REPO_INSTALL="apt-get install -y"
         PACKAGE_MANAGER_FILE_INSTALL="apt-get install -fy"
+
     elif [ "$VENDOR" = "Fedora Project" ]
         then
         DISTRIBUTION="fedora"
         PACKAGE_MANAGER_UPDATE="dnf update -y"
         PACKAGE_MANAGER_REPO_INSTALL="dnf install -y"
         PACKAGE_MANAGER_FILE_INSTALL="dnf install -y"
+
     elif [ "$VENDOR" = "openSUSE" ]
         then
         DISTRIBUTION="opensuse/leap"
         PACKAGE_MANAGER_UPDATE="zypper update -y"
         PACKAGE_MANAGER_REPO_INSTALL="zypper install -y"
         PACKAGE_MANAGER_FILE_INSTALL="zypper install -y"
+
+    elif [ "$VENDOR" = "CentOS" ]
+        then
+        DISTRIBUTION="centos"
+        PACKAGE_MANAGER_UPDATE="dnf update -y"
+        PACKAGE_MANAGER_REPO_INSTALL="dnf install -y"
+        PACKAGE_MANAGER_FILE_INSTALL="dnf install --nobest -y"
+
+    elif [ "$VENDOR" = "Mageia.Org" ]
+        then
+        DISTRIBUTION="mageia"
+        PACKAGE_MANAGER_UPDATE="urpmi.update -a"
+        PACKAGE_MANAGER_REPO_INSTALL="urpmi --auto"
+        PACKAGE_MANAGER_FILE_INSTALL="urpmi --auto"
     else
         echo "ERROR: Unsupported vendor"
         exit 1
