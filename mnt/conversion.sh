@@ -100,14 +100,26 @@ for plugin in ${PLUGINS[*]}
        plugins_with_arguments+="${plugin}"
 done
 
+# Fixes the name of the distribution by removing the docker tag from there
+DISTRIBUTION=$(echo "$DISTRIBUTION" | awk -F : '{ print $1 }')
+
 # Updating information about repositories 
 $PACKAGE_MANAGER_UPDATE
 
-# Installing wget
+# Installing additional dependencies
 $PACKAGE_MANAGER_REPO_INSTALL wget file cpio
 
+if [ "$DISTRIBUTION" = "alt" ]
+    then $PACKAGE_MANAGER_REPO_INSTALL icon-theme-adwaita
+elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ] || [ "$DISTRIBUTION" = "debian" ]
+    then $PACKAGE_MANAGER_REPO_INSTALL adwaita-icon-theme
+elif [ "$DISTRIBUTION" = "ubuntu" ] 
+    then $PACKAGE_MANAGER_REPO_INSTALL adwaita-icon-theme-full
+fi
+
+# DEBIAN_FRONTEND variable for installation of tzdata without interactive choice
 # Installing required package
-$PACKAGE_MANAGER_FILE_INSTALL /mnt/$PACKAGE_FILE
+DEBIAN_FRONTEND=noninteractive $PACKAGE_MANAGER_FILE_INSTALL /mnt/$PACKAGE_FILE
 
 #Preparing LinuxDeploy
 cd /tmp
@@ -135,6 +147,8 @@ for plugin in ${PLUGINS[*]}
         then $PACKAGE_MANAGER_REPO_INSTALL libqt5-qtbase-devel libqt5-qtdeclarative-devel
         elif [ "$DISTRIBUTION" = "mageia" ]
         then $PACKAGE_MANAGER_REPO_INSTALL libqwt-qt5-devel
+        elif [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]
+        then $PACKAGE_MANAGER_REPO_INSTALL qtbase5-dev qtbase5-dev-tools
         fi
 
         cd /tmp/linuxdeploy/plugins
@@ -153,6 +167,8 @@ for plugin in ${PLUGINS[*]}
         then $PACKAGE_MANAGER_REPO_INSTALL libgtk+3-devel librsvg-devel patchelf
         elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ]
         then $PACKAGE_MANAGER_REPO_INSTALL gtk3-devel librsvg2-devel patchelf
+        elif [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]
+        then $PACKAGE_MANAGER_REPO_INSTALL libgtk3-dev librsvg2-dev patchelf
         fi
 
         cd /tmp/linuxdeploy/usr/bin/ && wget https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh
@@ -167,6 +183,8 @@ for plugin in ${PLUGINS[*]}
         then $PACKAGE_MANAGER_REPO_INSTALL ncurses-devel ncurses-c++-libs
         elif [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "mageia" ]
         then $PACKAGE_MANAGER_REPO_INSTALL ncurses-devel 
+        elif [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]
+        then $PACKAGE_MANAGER_REPO_INSTALL libncurses5-dev libncursesw5-dev
         fi
 
         then
@@ -178,6 +196,8 @@ for plugin in ${PLUGINS[*]}
 
         if [ "$DISTRIBUTION" = "alt" ] || [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ]
         then $PACKAGE_MANAGER_REPO_INSTALL gstreamer-devel patchelf
+        elif [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]
+        then $PACKAGE_MANAGER_REPO_INSTALL libgstreamer1.0-dev patchelf
         fi
 
         cd /tmp/linuxdeploy/usr/bin/ && wget https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gstreamer/master/linuxdeploy-plugin-gstreamer.sh
@@ -186,90 +206,13 @@ for plugin in ${PLUGINS[*]}
 done
 
 
-
 # Preparing AppDir
 mkdir /tmp/AppDir
 
-# Declaration of parameters
-DESKTOP_FILE=""
-PACKAGE_NAME=""
-PACKAGE_TITLE=""
-ICON_NAME=""
-EXECUTABLE=""
-ICON=""
-
-
-if [[ $PACKAGE_TYPE = "RPM" ]]
-    then
-    # Unpacking archive
-    cd /tmp/AppDir && rpm2cpio /mnt/$PACKAGE_FILE | cpio -idmv && cd -
-
-    # Getting desktop file of package
-    DESKTOP_FILE+="/tmp/AppDir"
-    DESKTOP_FILE+=$(rpmquery --list $PACKAGE | grep -e .desktop -m 1)
-
-    echo "DESKTOP_FILE=$DESKTOP_FILE"
-
-    # Parsing it for executable, icon and name
-    PACKAGE_NAME=$(cat $DESKTOP_FILE | grep -e ^Exec= -m 1 | sed 's/Exec=//g' | cut -d' ' -f1 | sed 's/ /_/g')
-    echo "PACKAGE_NAME=$PACKAGE_NAME"
-    
-    PACKAGE_TITLE=$(cat $DESKTOP_FILE | grep -e ^Name= -m 1 | sed 's/Name=//g')
-    echo "PACKAGE_TITLE=$PACKAGE_TITLE"
-
-    ICON_NAME=$(cat $DESKTOP_FILE | grep -e ^Icon= -m 1 | sed 's/Icon=//g')
-    echo "ICON_NAME=$ICON_NAME"
-
-    # Finding executable and icon files
-    EXECUTABLE+="/tmp/AppDir"
-    EXECUTABLE+=$(rpmquery --list $PACKAGE | grep -e /bin/$PACKAGE_NAME -m 1)
-    echo "EXECUTABLE=$EXECUTABLE"
-
-    ICON+="/tmp/AppDir"
-    ICON+=$(rpmquery --list $PACKAGE | grep -e $ICON_NAME.png -m 1)
-    echo "ICON=$ICON"
-
-    # If icon is not found
-    if [[ "$ICON" = "/tmp/AppDir" ]]
-        then
-        # Install adwaita icons
-        echo "Icon not found"
-
-        if [ "$DISTRIBUTION" = "alt" ]
-        then $PACKAGE_MANAGER_REPO_INSTALL icon-theme-adwaia
-        elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ]
-        then $PACKAGE_MANAGER_REPO_INSTALL adwaita-icon-theme
-        fi
-        
-        # And set is as default
-        # If there are no Icon name
-        if [[ "$ICON_NAME" = "" ]]
-        then
-            # Set same name like 
-            ICON_NAME="$PACKAGE"
-        fi
-        mkdir /tmp/AppDir/usr/share/icons
-        cp /usr/share/icons/Adwaita/256x256/legacy/user-info.png /tmp/AppDir/usr/share/icons/$ICON_NAME.png
-        ICON="/tmp/AppDir/usr/share/icons/$ICON_NAME.png"
-    fi
-
-    else
-    echo "$PACKAGE_TYPE is wrong type of package"
-fi
-
-# If there are no desktop file
-if [ "$DESKTOP_FILE" = "/tmp/AppDir" ]
-    then
-    # Use --create-desktop-file option
-    echo "/tmp/linuxdeploy/AppRun --appdir /tmp/AppDir --executable $EXECUTABLE --create-desktop-file --icon-file $ICON $plugins_with_arguments --output appimage"
-    cd /tmp && /tmp/linuxdeploy/AppRun --appdir /tmp/AppDir/ --executable $EXECUTABLE --create-desktop-file --icon-file $ICON $plugins_with_arguments --output appimage
-    else
-    # Use .desktop file if it exists
-    echo "/tmp/linuxdeploy/AppRun --appdir /tmp/AppDir --executable $EXECUTABLE --desktop-file $DESKTOP_FILE --icon-file $ICON $plugins_with_arguments --output appimage"
-    cd /tmp && /tmp/linuxdeploy/AppRun --appdir /tmp/AppDir/ --executable $EXECUTABLE --desktop-file $DESKTOP_FILE --icon-file $ICON $plugins_with_arguments --output appimage
-fi
+# Starting conversion
+/mnt/conversion-$PACKAGE_TYPE.sh --package-file $PACKAGE_FILE --package $PACKAGE --distribution $DISTRIBUTION $plugins_with_arguments
 
 # Copy AppImage file to host directory
 cp /tmp/*.AppImage /mnt/
 
-echo -e "\n\nNow you can find your AppImage in ./mnt/$(ls /mnt/ | grep -e $PACKAGE_TITLE -m 1)"
+echo -e "\n\nNow you can find your AppImage in /tmp/mount/$(ls /mnt/ | grep -e $PACKAGE_TITLE -m 1)"
