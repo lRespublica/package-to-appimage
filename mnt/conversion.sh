@@ -103,6 +103,10 @@ done
 # Fixes the name of the distribution by removing the docker tag from there
 DISTRIBUTION=$(echo "$DISTRIBUTION" | awk -F : '{ print $1 }')
 
+if [ $DISTRIBUTION = "ubuntu" ] || [ $DISTRIBUTION = "debian" ]   
+then
+    export DEBIAN_FRONTEND=noninteractive                           # For noninteractive installation of tzdata and keyboard-configuration
+fi
 # Updating information about repositories 
 $PACKAGE_MANAGER_UPDATE
 
@@ -114,12 +118,11 @@ if [ "$DISTRIBUTION" = "alt" ]
 elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ] || [ "$DISTRIBUTION" = "debian" ]
     then $PACKAGE_MANAGER_REPO_INSTALL adwaita-icon-theme
 elif [ "$DISTRIBUTION" = "ubuntu" ] 
-    then $PACKAGE_MANAGER_REPO_INSTALL adwaita-icon-theme-full
+    then $PACKAGE_MANAGER_REPO_INSTALL adwaita-icon-theme-full 
 fi
 
-# DEBIAN_FRONTEND variable for installation of tzdata without interactive choice
 # Installing required package
-DEBIAN_FRONTEND=noninteractive $PACKAGE_MANAGER_FILE_INSTALL /mnt/$PACKAGE_FILE
+$PACKAGE_MANAGER_FILE_INSTALL /mnt/$PACKAGE_FILE
 
 #Preparing LinuxDeploy
 cd /tmp
@@ -148,7 +151,7 @@ for plugin in ${PLUGINS[*]}
         elif [ "$DISTRIBUTION" = "mageia" ]
         then $PACKAGE_MANAGER_REPO_INSTALL libqwt-qt5-devel
         elif [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]
-        then $PACKAGE_MANAGER_REPO_INSTALL qtbase5-dev qtbase5-dev-tools
+        then $PACKAGE_MANAGER_REPO_INSTALL qtbase5-dev qtbase5-dev-tools qtpositioning5-dev libqt5sql5-mysql libqt5texttospeech5-dev
         fi
 
         cd /tmp/linuxdeploy/plugins
@@ -168,7 +171,7 @@ for plugin in ${PLUGINS[*]}
         elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ]
         then $PACKAGE_MANAGER_REPO_INSTALL gtk3-devel librsvg2-devel patchelf
         elif [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]
-        then $PACKAGE_MANAGER_REPO_INSTALL libgtk3-dev librsvg2-dev patchelf
+        then $PACKAGE_MANAGER_REPO_INSTALL libgtk-3-dev librsvg2-dev pkg-config patchelf 
         fi
 
         cd /tmp/linuxdeploy/usr/bin/ && wget https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh
@@ -197,7 +200,7 @@ for plugin in ${PLUGINS[*]}
         if [ "$DISTRIBUTION" = "alt" ] || [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ]
         then $PACKAGE_MANAGER_REPO_INSTALL gstreamer-devel patchelf
         elif [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]
-        then $PACKAGE_MANAGER_REPO_INSTALL libgstreamer1.0-dev patchelf
+        then $PACKAGE_MANAGER_REPO_INSTALL libgstreamer1.0-dev patchelf 
         fi
 
         cd /tmp/linuxdeploy/usr/bin/ && wget https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gstreamer/master/linuxdeploy-plugin-gstreamer.sh

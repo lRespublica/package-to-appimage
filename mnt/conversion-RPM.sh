@@ -98,14 +98,26 @@ echo "PACKAGE_TITLE=$PACKAGE_TITLE"
 ICON_NAME=$(cat $DESKTOP_FILE | grep -e ^Icon= -m 1 | sed 's/Icon=//g')
 echo "ICON_NAME=$ICON_NAME"
 
+ICON+="/tmp/AppDir"
+ICON+=$(rpmquery --list $PACKAGE | grep -e $ICON_NAME.png -m 1)
+echo "ICON=$ICON"
+
+# WARNING, IT IS A KLUDGE
+if [ -f "$ICON_NAME" ]                                                    # If icon name is a file
+then                                                                      # For case like "/usr/share/icons/breeze/applets/16/car.svg"
+echo "updating icon..."
+ICON=/tmp/AppDir$(echo $ICON_NAME | sed 's/\/[^/]*$//')/$PACKAGE.$(echo $ICON_NAME | sed 's/^.*\.//') # New icon file should have be in same dir with older one, and have same extension, but different name
+mv /tmp/AppDir$ICON_NAME $ICON                                          # Move icon with same name as package. Required for auto-generated .desktop file
+ICON_NAME=$PACKAGE                                                      # Turn "/usr/share/icons/breeze/applets/16/car.svg" into "car"
+DESKTOP_FILE="/tmp/AppDir"                                              # Clean desktop file, instead of the existing one create a new one
+echo "ICON=$ICON"
+fi
+# END OF WARNING          
+
 # Finding executable and icon files
 EXECUTABLE+="/tmp/AppDir"
 EXECUTABLE+=$(rpmquery --list $PACKAGE | grep -e /bin/$PACKAGE_NAME -m 1)
 echo "EXECUTABLE=$EXECUTABLE"
-
-ICON+="/tmp/AppDir"
-ICON+=$(rpmquery --list $PACKAGE | grep -e $ICON_NAME.png -m 1)
-echo "ICON=$ICON"
 
 # If icon is not found
 if [[ "$ICON" = "/tmp/AppDir" ]]

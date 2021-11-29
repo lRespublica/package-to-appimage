@@ -90,7 +90,7 @@ mkdir /tmp/mount
 
 # Copying package file
 cp $PACKAGE /tmp/mount
-cp ./mnt/* /tmp/mount
+cp $(dirname $0)/mnt/* /tmp/mount
 # Saving name of package
 PACKAGE_FILE=$(echo "$PACKAGE" | awk -F / '{print $NF}')
 
@@ -159,14 +159,14 @@ elif [ "$PACKAGE_TYPE" = "Deb" ]
         then
         DISTRIBUTION="ubuntu:rolling"
         PACKAGE_MANAGER_UPDATE="apt-get update"
-        PACKAGE_MANAGER_REPO_INSTALL="apt-get install -y"
-        PACKAGE_MANAGER_FILE_INSTALL="apt-get install -fy"
+        PACKAGE_MANAGER_REPO_INSTALL="apt-get install -y "
+        PACKAGE_MANAGER_FILE_INSTALL="apt-get install -fy "
 
         else
         DISTRIBUTION="debian:testing"
         PACKAGE_MANAGER_UPDATE="apt-get update"
-        PACKAGE_MANAGER_REPO_INSTALL="apt-get install -y"
-        PACKAGE_MANAGER_FILE_INSTALL="apt-get install -fy"
+        PACKAGE_MANAGER_REPO_INSTALL="apt-get install -y "
+        PACKAGE_MANAGER_FILE_INSTALL="apt-get install -y "
     fi
 else
     rm -f /tmp/mount/$PACKAGE_FILE
