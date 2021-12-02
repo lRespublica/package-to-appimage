@@ -20,7 +20,6 @@ function plugin_is_correct()
 DISTRIBUTION=""
 PACKAGE=""
 PACKAGE_FILE=""
-PACKAGE_NAME=""
 PACKAGE_TYPE=""
 PACKAGE_MANAGER_UPDATE=""
 PACKAGE_MANAGER_REPO_INSTALL=""
@@ -28,7 +27,7 @@ PACKAGE_MANAGER_FILE_INSTALL=""
 PLUGINS=""
 PLUGINS_COUNT=0
 
-while [ \"$1\" != \"\" ]
+while [ "$1" != "" ]
 do
     case "$1" in 
     
@@ -81,9 +80,16 @@ do
                 fi;
                 shift;shift;;
 
+    --mount-directory) if [ -n "$2" ]
+                then MOUNT_DIRECTORY="$2";
+
+                else echo -e "\tPlease, specify the mount directory"; exit 1;
+                fi;
+                shift;shift;;
+
     --plugin)  if [ -n "$2" ] && [[ $(plugin_is_correct "$2") = "1" ]]
                     then PLUGINS[PLUGINS_COUNT]="$2";
-                        PLUGINS_COUNT=$(($PLUGINS_COUNT + 1));
+                        PLUGINS_COUNT=$((PLUGINS_COUNT + 1));
 
                     else echo -e "\tPlease, specify the plugin. $2 is not correct plugin";exit 1;
                 fi;            
@@ -103,7 +109,7 @@ done
 # Fixes the name of the distribution by removing the docker tag from there
 DISTRIBUTION=$(echo "$DISTRIBUTION" | awk -F : '{ print $1 }')
 
-if [ $DISTRIBUTION = "ubuntu" ] || [ $DISTRIBUTION = "debian" ]   
+if [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]   
 then
     export DEBIAN_FRONTEND=noninteractive                           # For noninteractive installation of tzdata and keyboard-configuration
 fi
@@ -122,10 +128,10 @@ elif [ "$DISTRIBUTION" = "ubuntu" ]
 fi
 
 # Installing required package
-$PACKAGE_MANAGER_FILE_INSTALL /mnt/$PACKAGE_FILE
+$PACKAGE_MANAGER_FILE_INSTALL /mnt/"$PACKAGE_FILE"
 
 #Preparing LinuxDeploy
-cd /tmp
+cd /tmp/
 wget -c -N https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
 chmod +x ./linuxdeploy-x86_64.AppImage
 ./linuxdeploy-x86_64.AppImage --appimage-extract
@@ -213,9 +219,4 @@ done
 mkdir /tmp/AppDir
 
 # Starting conversion
-/mnt/conversion-$PACKAGE_TYPE.sh --package-file $PACKAGE_FILE --package $PACKAGE --distribution $DISTRIBUTION $plugins_with_arguments
-
-# Copy AppImage file to host directory
-cp /tmp/*.AppImage /mnt/
-
-echo -e "\n\nNow you can find your AppImage in /tmp/mount/$(ls /mnt/ | grep -e $PACKAGE_TITLE -m 1)"
+/mnt/conversion-"$PACKAGE_TYPE".sh --package-file "$PACKAGE_FILE" --package "$PACKAGE" --mount-directory "$MOUNT_DIRECTORY" $plugins_with_arguments

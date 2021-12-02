@@ -24,6 +24,8 @@ function plugin_is_correct()
 }
 
 # Declaration of parameters
+MOUNT_DIRECTORY="/tmp/mount"
+
 PACKAGE=""
 PLUGINS=""
 PLUGINS_COUNT=0      
@@ -45,7 +47,7 @@ then
 fi
 
 # Enumerating options
-while [ \"$1\" != \"\" ]
+while [ "$1" != "" ]
 do
     case "$1" in 
     --package) if [ -n "$2" ]
@@ -55,9 +57,16 @@ do
                 fi;
                 shift;shift;;
 
+    --mount-directory) if [ -n "$2" ]
+                    then MOUNT_DIRECTORY="$2";
+
+                    else echo -e "\tPlease, specify the mount directory"; exit 1;
+                fi;
+                shift;shift;;
+
     --plugin)  if [ -n "$2" ] && [[ $(plugin_is_correct "$2") = "1" ]]
                     then PLUGINS[PLUGINS_COUNT]="$2";
-                        PLUGINS_COUNT=$(($PLUGINS_COUNT + 1));
+                        PLUGINS_COUNT=$((PLUGINS_COUNT + 1));
 
                     else echo -e "\tPlease, specify the plugin. $2 is not correct plugin";exit 1;
                 fi;            
@@ -86,20 +95,20 @@ then echo -e "\tPlease, specify the package"; exit 1;
 fi
 
 # Making an directory for mount
-mkdir /tmp/mount
+mkdir $MOUNT_DIRECTORY
 
 # Copying package file
-cp $PACKAGE /tmp/mount
-cp $(dirname $0)/mnt/* /tmp/mount
+cp "$PACKAGE" $MOUNT_DIRECTORY
+cp $(dirname "$0")/mnt/* $MOUNT_DIRECTORY
 # Saving name of package
 PACKAGE_FILE=$(echo "$PACKAGE" | awk -F / '{print $NF}')
 
 # Parsing metadata
 PACKAGE_TYPE=$(file -b "$PACKAGE" | cut -c 1-3)
-if [ $PACKAGE_TYPE = "RPM" ]
+if [ "$PACKAGE_TYPE" = "RPM" ]
     then
 
-    DATA=$(docker run -ti --rm -v "/tmp/mount:/mnt" alt rpm -qip "/mnt/$PACKAGE_FILE") 
+    DATA=$(docker run -ti --rm -v "$MOUNT_DIRECTORY:/mnt" alt rpm -qip "/mnt/$PACKAGE_FILE") 
 
     VENDOR=$(echo "$DATA" | grep -e "Vendor" | awk -F : '{ print $2 }' | cut -c2- | head --bytes -2)
 
@@ -109,8 +118,8 @@ if [ $PACKAGE_TYPE = "RPM" ]
         then
         DISTRIBUTION="alt"
         PACKAGE_MANAGER_UPDATE="apt-get update"
-        PACKAGE_MANAGER_REPO_INSTALL="apt-get install -y"
-        PACKAGE_MANAGER_FILE_INSTALL="apt-get install -fy"
+        PACKAGE_MANAGER_REPO_INSTALL="apt-get install --fix-missing -y"
+        PACKAGE_MANAGER_FILE_INSTALL="apt-get install --fix-missing -fy"
 
     elif [ "$VENDOR" = "Fedora Project" ]
         then
@@ -141,7 +150,7 @@ if [ $PACKAGE_TYPE = "RPM" ]
         PACKAGE_MANAGER_FILE_INSTALL="urpmi --auto"
 
     else
-        rm -f /tmp/mount/$PACKAGE_FILE
+        rm -f $MOUNT_DIRECTORY/"$PACKAGE_FILE"
         echo "ERROR: Unsupported vendor"
         exit 1
     fi
@@ -150,7 +159,7 @@ elif [ "$PACKAGE_TYPE" = "Deb" ]
     then
     PACKAGE_TYPE="DEB"
 
-    DATA=$(docker run -ti --rm -v "/tmp/mount:/mnt" ubuntu dpkg-deb --info "/mnt/$PACKAGE_FILE") 
+    DATA=$(docker run -ti --rm -v "$MOUNT_DIRECTORY:/mnt" ubuntu dpkg-deb --info "/mnt/$PACKAGE_FILE") 
     VENDOR=$(echo "$DATA" | grep -e "Maintainer" -m 1 | awk -F : '{ print $2 }' | cut -c2- | head --bytes -2)
 
     PACKAGE_NAME=$(echo "$DATA" | grep -e "Package:" | awk -F : '{ print $2 }' | cut -c2- | head --bytes -2) 
@@ -169,15 +178,15 @@ elif [ "$PACKAGE_TYPE" = "Deb" ]
         PACKAGE_MANAGER_FILE_INSTALL="apt-get install -y "
     fi
 else
-    rm -f /tmp/mount/$PACKAGE_FILE
+    rm -f $MOUNT_DIRECTORY/"$PACKAGE_FILE"
     echo "ERROR: Wrong type of package"
     exit 1
 fi
 
-docker run -ti --rm -v "/tmp/mount/:/mnt" --security-opt seccomp=unconfined $DISTRIBUTION /bin/bash /mnt/conversion.sh  \
+docker run -ti --rm -v "$MOUNT_DIRECTORY/:/mnt" --security-opt seccomp=unconfined $DISTRIBUTION /bin/bash /mnt/conversion.sh  \
 --package-manager-update "$PACKAGE_MANAGER_UPDATE"  --package-manager-file-install "$PACKAGE_MANAGER_FILE_INSTALL" \
 --package-manager-repo-install "$PACKAGE_MANAGER_REPO_INSTALL" --package-file "$PACKAGE_FILE" --package-type "$PACKAGE_TYPE" \
---package "$PACKAGE_NAME" --distribution "$DISTRIBUTION" $plugins_with_arguments
+--package "$PACKAGE_NAME" --distribution "$DISTRIBUTION" --mount-directory "$MOUNT_DIRECTORY" $plugins_with_arguments
 
-rm -f /tmp/mount/$PACKAGE_FILE
-rm -f /tmp/mount/conversion*.sh
+rm -f $MOUNT_DIRECTORY/"$PACKAGE_FILE"
+rm -f $MOUNT_DIRECTORY/conversion*.sh
