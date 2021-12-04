@@ -34,56 +34,56 @@ do
     --distribution) if [ -n "$2" ]
                     then DISTRIBUTION="$2";
 
-                    else echo -e "\tPlease, specify the distribution"; exit 1;
+                    else printf "\tPlease, specify the distribution\n"; exit 1;
                 fi;
                 shift;shift;;
 
     --package-file) if [ -n "$2" ]
                     then PACKAGE_FILE="$2";
 
-                    else echo -e "\tPlease, specify the package file"; exit 1;
+                    else printf "\tPlease, specify the package file\n"; exit 1;
                 fi;
                 shift;shift;;
 
     --package) if [ -n "$2" ]
                     then PACKAGE="$2";
 
-                    else echo -e "\tPlease, specify the package"; exit 1;
+                    else printf "\tPlease, specify the package\n"; exit 1;
                 fi;
                 shift;shift;;            
 
     --package-type) if [ -n "$2" ]
                     then PACKAGE_TYPE="$2";
 
-                    else echo -e "\tPlease, specify the package type"; exit 1;
+                    else printf "\tPlease, specify the package type\n"; exit 1;
                 fi;
                 shift;shift;;
 
     --package-manager-update) if [ -n "$2" ]
                     then PACKAGE_MANAGER_UPDATE="$2";
 
-                    else echo -e "\tPlease, specify the package manager update command"; exit 1;
+                    else printf "\tPlease, specify the package manager update command\n"; exit 1;
                 fi;
                 shift;shift;;
 
     --package-manager-repo-install) if [ -n "$2" ]
                     then PACKAGE_MANAGER_REPO_INSTALL="$2";
 
-                    else echo -e "\tPlease, specify the package manager command to install from repository "; exit 1;
+                    else printf "\tPlease, specify the package manager command to install from repository \n"; exit 1;
                 fi;
                 shift;shift;;
 
     --package-manager-file-install) if [ -n "$2" ]
                     then PACKAGE_MANAGER_FILE_INSTALL="$2";
 
-                    else echo -e "\tPlease, specify the package manager command to install from file "; exit 1;
+                    else printf "\tPlease, specify the package manager command to install from file \n"; exit 1;
                 fi;
                 shift;shift;;
 
     --mount-directory) if [ -n "$2" ]
                 then MOUNT_DIRECTORY="$2";
 
-                else echo -e "\tPlease, specify the mount directory"; exit 1;
+                else printf "\tPlease, specify the mount directory\n"; exit 1;
                 fi;
                 shift;shift;;
 
@@ -91,11 +91,11 @@ do
                     then PLUGINS[PLUGINS_COUNT]="$2";
                         PLUGINS_COUNT=$((PLUGINS_COUNT + 1));
 
-                    else echo -e "\tPlease, specify the plugin. $2 is not correct plugin";exit 1;
+                    else printf "\tPlease, specify the plugin. $2 is not correct plugin\n";exit 1;
                 fi;            
                 shift;shift;;
 
-    *) echo -e "$1 is not an option"; exit 1;;
+    *) printf "$1 is not an option\n"; exit 1;;
     esac
 done
 

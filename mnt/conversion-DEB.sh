@@ -41,21 +41,21 @@ do
     --package-file) if [ -n "$2" ]
                     then PACKAGE_FILE="$2";
 
-                    else echo -e "\tPlease, specify the package"; exit 1;
+                    else printf "\tPlease, specify the package\n"; exit 1;
                 fi;
                 shift;shift;;
 
     --mount-directory) if [ -n "$2" ]
                     then MOUNT_DIRECTORY="$2";
 
-                    else echo -e "\tPlease, specify the mount directory"; exit 1;
+                    else printf "\tPlease, specify the mount directory\n"; exit 1;
                 fi;
                 shift;shift;;    
 
     --package) if [ -n "$2" ]
                     then PACKAGE="$2";
 
-                    else echo -e "\tPlease, specify the package"; exit 1;
+                    else printf "\tPlease, specify the package\n"; exit 1;
                 fi;
                 shift;shift;;
 
@@ -63,11 +63,11 @@ do
                     then PLUGINS[PLUGINS_COUNT]="$2";
                         PLUGINS_COUNT=$((PLUGINS_COUNT + 1));
 
-                    else echo -e "\tPlease, specify the plugin. $2 is not correct plugin";exit 1;
+                    else printf "\tPlease, specify the plugin. $2 is not correct plugin\n";exit 1;
                 fi;            
                 shift;shift;;
 
-    *) echo -e "$1 is not an option"; exit 1;;
+    *) printf "$1 is not an option\n"; exit 1;;
     esac
 done
 
@@ -163,4 +163,4 @@ fi
 # Copy AppImage file to host directory
 cp /tmp/*.AppImage /mnt/
 
-echo -e "\n\nNow you can find your AppImage $MOUNT_DIRECTORY/$(ls /mnt/ | grep -e "$PACKAGE_TITLE" -m 1)"
+printf "\n\nNow you can find your AppImage $MOUNT_DIRECTORY/$(ls /mnt/ | grep -e "$PACKAGE_TITLE" -m 1)\n"

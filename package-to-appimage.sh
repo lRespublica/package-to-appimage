@@ -3,8 +3,11 @@
 # Help function
 function help()
 {
-    echo -e '\n\t--package [package.rpm, package.deb] \t specify the package to repackage'
-    echo -e '\t--plugin [plugin]\t\t\t specify the plugin to use\n\t\t\t\t\t\t available plugins - qt gtk ncurses gstreamer'
+    printf '\n\t--package [package.rpm, package.deb] \t specify the package to repackage\n'
+    printf '\t--plugin [plugin]\t\t\t specify the plugin to use\n\t\t\t\t\t\t available plugins - qt gtk ncurses gstreamer\n\n'
+    printf '\t--mount-directory\t\t\t specify directory for mounting into docker\n'
+    printf '\n\t/--use-existants-container\t\t use existance container, you need to create it before with "package-to-appimage-create-docker-image"\n'
+    printf '\t\-E\n'
 }
 
 # Checking if the plugin is correct
@@ -32,6 +35,8 @@ PLUGINS_COUNT=0
 
 PACKAGE_TYPE=""
 
+USE_OF_EXISTED_IMAGE="0"
+
 DISTRIBUTION=""
 PACKAGE_MANAGER_FILE_INSTALL=""
 PACKAGE_MANAGER_REPO_INSTALL=""
@@ -53,14 +58,17 @@ do
     --package) if [ -n "$2" ]
                     then PACKAGE="$2";
 
-                    else echo -e "\tPlease, specify the package"; exit 1;
+                    else printf "\tPlease, specify the package\n"; exit 1;
                 fi;
                 shift;shift;;
+    
+    "--use-existant-container" | "-E") USE_OF_EXISTED_IMAGE="1";
+                shift;;
 
     --mount-directory) if [ -n "$2" ]
                     then MOUNT_DIRECTORY="$2";
 
-                    else echo -e "\tPlease, specify the mount directory"; exit 1;
+                    else printf "\tPlease, specify the mount directory\n"; exit 1;
                 fi;
                 shift;shift;;
 
@@ -68,13 +76,13 @@ do
                     then PLUGINS[PLUGINS_COUNT]="$2";
                         PLUGINS_COUNT=$((PLUGINS_COUNT + 1));
 
-                    else echo -e "\tPlease, specify the plugin. $2 is not correct plugin";exit 1;
+                    else printf "\tPlease, specify the plugin. $2 is not correct plugin\n";exit 1;
                 fi;            
                 shift;shift;;
 
     --help) help;exit;;
 
-    *) echo -e "$1 is not an option"; exit 1;;
+    *) printf "$1 is not an option\n"; exit 1;;
     esac
 done
 
@@ -85,13 +93,23 @@ for plugin in ${PLUGINS[*]}
        plugins_with_arguments+="${plugin}"
 done
 
-# Checking if package exist and correct
-if [ ! -f "$PACKAGE" ]
-then echo -e "\tPackage is not exist"; exit 1;
+plugins_for_docker=""
+if [ $USE_OF_EXISTED_IMAGE = "1" ]
+then
+    DISTRIBUTION+="package-to-appimage/"
+    for plugin in ${PLUGINS[*]}
+    do plugins_for_docker+="-plugin"
+       plugins_for_docker+="-${plugin}"
+done
 fi
 
-if [ "$PACKAGE" = \"\" ]
-then echo -e "\tPlease, specify the package"; exit 1;
+# Checking if package exist and correct
+if [ ! -f "$PACKAGE" ]
+then printf "\tPackage is not exist\n"; exit 1;
+fi
+
+if [ "$PACKAGE" = "" ]
+then printf "\tPlease, specify the package\n"; exit 1;
 fi
 
 # Making an directory for mount
@@ -116,35 +134,35 @@ if [ "$PACKAGE_TYPE" = "RPM" ]
 
     if [ "$VENDOR" == "ALT Linux Team" ]
         then
-        DISTRIBUTION="alt"
+        DISTRIBUTION+="alt"
         PACKAGE_MANAGER_UPDATE="apt-get update"
         PACKAGE_MANAGER_REPO_INSTALL="apt-get install --fix-missing -y"
         PACKAGE_MANAGER_FILE_INSTALL="apt-get install --fix-missing -fy"
 
     elif [ "$VENDOR" = "Fedora Project" ]
         then
-        DISTRIBUTION="fedora"
+        DISTRIBUTION+="fedora"
         PACKAGE_MANAGER_UPDATE="dnf update -y"
         PACKAGE_MANAGER_REPO_INSTALL="dnf install -y"
         PACKAGE_MANAGER_FILE_INSTALL="dnf install -y"
 
     elif [ "$VENDOR" = "openSUSE" ]
         then
-        DISTRIBUTION="opensuse/leap"
+        DISTRIBUTION+="opensuse/leap"
         PACKAGE_MANAGER_UPDATE="zypper update -y"
         PACKAGE_MANAGER_REPO_INSTALL="zypper install -y"
         PACKAGE_MANAGER_FILE_INSTALL="zypper install -y"
 
     elif [ "$VENDOR" = "CentOS" ]
         then
-        DISTRIBUTION="centos"
+        DISTRIBUTION+="centos"
         PACKAGE_MANAGER_UPDATE="dnf update -y"
         PACKAGE_MANAGER_REPO_INSTALL="dnf install -y"
         PACKAGE_MANAGER_FILE_INSTALL="dnf install --nobest -y"
 
     elif [ "$VENDOR" = "Mageia.Org" ]
         then
-        DISTRIBUTION="mageia"
+        DISTRIBUTION+="mageia"
         PACKAGE_MANAGER_UPDATE="urpmi.update -a"
         PACKAGE_MANAGER_REPO_INSTALL="urpmi --auto"
         PACKAGE_MANAGER_FILE_INSTALL="urpmi --auto"
@@ -166,13 +184,13 @@ elif [ "$PACKAGE_TYPE" = "Deb" ]
 
     if [ "$VENDOR" = "Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>" ]
         then
-        DISTRIBUTION="ubuntu:rolling"
+        DISTRIBUTION+="ubuntu:rolling"
         PACKAGE_MANAGER_UPDATE="apt-get update"
         PACKAGE_MANAGER_REPO_INSTALL="apt-get install -y "
         PACKAGE_MANAGER_FILE_INSTALL="apt-get install -fy "
 
         else
-        DISTRIBUTION="debian:testing"
+        DISTRIBUTION+="debian:testing"
         PACKAGE_MANAGER_UPDATE="apt-get update"
         PACKAGE_MANAGER_REPO_INSTALL="apt-get install -y "
         PACKAGE_MANAGER_FILE_INSTALL="apt-get install -y "
@@ -181,6 +199,16 @@ else
     rm -f $MOUNT_DIRECTORY/"$PACKAGE_FILE"
     echo "ERROR: Wrong type of package"
     exit 1
+fi
+
+if [ $USE_OF_EXISTED_IMAGE = "1" ]
+then DISTRIBUTION+=$plugins_for_docker
+    docker images | grep -e "$DISTRIBUTION"
+    if [ $? != "0" ]
+    then
+        echo "Distribution with plugins not found, please create it with \"package-to-appimage-create-docker-image\""
+        exit 1
+    fi
 fi
 
 docker run -ti --rm -v "$MOUNT_DIRECTORY/:/mnt" --security-opt seccomp=unconfined $DISTRIBUTION /bin/bash /mnt/conversion.sh  \

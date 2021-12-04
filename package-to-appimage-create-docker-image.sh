@@ -1,0 +1,201 @@
+#!/bin/bash
+
+# Help function
+function help()
+{
+    printf '\t--plugin [plugin]\t\t\t specify the plugin to use\n\t\t\t\t\t\t available plugins - qt gtk ncurses gstreamer\n'
+    printf '\n\t--distribution [distro]\t\t\t specify the distro to use\n\t\t\t\t\t\t available distributions - alt fedora opensuse centos mageia ubuntu debian\n'
+}
+
+# Checking if the plugin is correct
+function plugin_is_correct()
+{
+    if [[ $# -eq 1 ]]
+    then 
+        for plugin in qt python gtk ncurses gstreamer
+        do 
+            if [[ "$1" = "$plugin" ]]
+                then echo 1; exit;
+            fi
+        done
+        echo 0; exit;
+    else echo 0; exit;
+    fi
+}
+
+function distro_is_correct()
+{
+    if [[ $# -eq 1 ]]
+    then 
+        for plugin in alt fedora opensuse centos mageia ubuntu debian
+        do 
+            if [[ "$1" = "$plugin" ]]
+                then echo 1; exit;
+            fi
+        done
+        echo 0; exit;
+    else echo 0; exit;
+    fi
+}
+
+# Declaration of parameters
+PLUGINS=""
+PLUGINS_COUNT=0      
+
+DISTRIBUTION=""
+DOCKER_IMAGE=""
+PACKAGE_MANAGER_REPO_INSTALL=""
+PACKAGE_MANAGER_UPDATE=""
+
+DOCKERFILE_DIR="/tmp/package-to-appimage"
+DOCKERFILE=$DOCKERFILE_DIR
+DOCKERFILE+="/Dockerfile"
+
+
+# Close programm without arguments
+if [ $# -eq 0 ]
+then
+    echo "There is no parameters"
+    help
+    exit 1
+fi
+
+# Enumerating options
+while [ "$1" != "" ]
+do
+    case "$1" in 
+    --distribution) if [ -n "$2" ] && [ $(distro_is_correct "$2") = "1" ]
+                    then DISTRIBUTION="$2";
+
+                    else printf "\tPlease, specify the distro\n"; exit 1;
+                fi;
+                shift;shift;;
+
+
+    --plugin)  if [ -n "$2" ] && [[ $(plugin_is_correct "$2") = "1" ]]
+                    then PLUGINS[PLUGINS_COUNT]="$2";
+                        PLUGINS_COUNT=$((PLUGINS_COUNT + 1));
+
+                    else printf "\tPlease, specify the plugin. $2 is not correct plugin\n";exit 1;
+                fi;            
+                shift;shift;;
+
+    --help) help;exit;;
+
+    *) printf "$1 is not an option\n"; exit 1;;
+    esac
+done
+
+# Adding plugins with argument, like --plugin qt
+plugins_with_arguments=""
+for plugin in ${PLUGINS[*]}
+    do plugins_with_arguments+="-plugin"
+       plugins_with_arguments+="-${plugin}"
+done
+
+if [ "$DISTRIBUTION" = "" ]
+    then printf "\tPlease, specify the distro\n"; exit 1;
+    elif [ "$DISTRIBUTION" = "ubuntu" ]
+        then DOCKER_IMAGE="ubuntu:rolling"
+    elif [ "$DISTRIBUTION" = "debain" ]
+        then DOCKER_IMAGE="debian:testing"
+    elif [ "$DISTRIBUTION" = "opensuse" ]
+        then DOCKER_IMAGE="opensuse/leap"
+    else
+        DOCKER_IMAGE=$DISTRIBUTION
+fi
+
+mkdir -p /tmp/package-to-appimage
+printf "FROM $DOCKER_IMAGE\n" > $DOCKERFILE
+
+case "$DISTRIBUTION" in 
+    "alt")  PACKAGE_MANAGER_UPDATE="apt-get update"
+            PACKAGE_MANAGER_REPO_INSTALL="apt-get install --fix-missing -y" ;;
+        
+    "fedora" | "centos")    PACKAGE_MANAGER_UPDATE="dnf update -y"
+                            PACKAGE_MANAGER_REPO_INSTALL="dnf install -y" ;;
+    
+    "opensuse")             PACKAGE_MANAGER_UPDATE="zypper update -y"
+                            PACKAGE_MANAGER_REPO_INSTALL="zypper install -y" ;;
+
+    "mageia")               PACKAGE_MANAGER_UPDATE="urpmi.update -a"
+                            PACKAGE_MANAGER_REPO_INSTALL="urpmi --auto" ;;
+
+    "ubuntu" | "debian")    PACKAGE_MANAGER_UPDATE="apt-get update"
+                            PACKAGE_MANAGER_REPO_INSTALL="apt-get install -y "
+                            printf "ENV DEBIAN_FRONTEND=noninteractive\n" >> $DOCKERFILE ;;
+esac
+
+printf "RUN $PACKAGE_MANAGER_UPDATE\n" >> $DOCKERFILE
+
+echo "RUN $PACKAGE_MANAGER_REPO_INSTALL wget file cpio" >> $DOCKERFILE
+
+if [ "$DISTRIBUTION" = "alt" ]
+    then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL icon-theme-adwaita" >> $DOCKERFILE
+elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ] || [ "$DISTRIBUTION" = "debian" ]
+    then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL adwaita-icon-theme" >> $DOCKERFILE
+elif [ "$DISTRIBUTION" = "ubuntu" ] 
+    then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL adwaita-icon-theme-full" >> $DOCKERFILE
+fi
+
+for plugin in ${PLUGINS[*]}
+    do
+
+    if [ "$plugin" = "qt" ] 
+        # Downloading packages for qt
+        then
+
+        #Installing dependencies
+        if [ "$DISTRIBUTION" = "alt" ]
+        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL qt5-base-devel qt5-declarative-devel" >> $DOCKERFILE
+        elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "centos" ]
+        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL qt5-qtbase-devel qt5-qtdeclarative-devel" >> $DOCKERFILE
+        elif [ "$DISTRIBUTION" = "opensuse" ]
+        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL libqt5-qtbase-devel libqt5-qtdeclarative-devel" >> $DOCKERFILE
+        elif [ "$DISTRIBUTION" = "mageia" ]
+        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL libqwt-qt5-devel" >> $DOCKERFILE
+        elif [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]
+        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL qtbase5-dev qtbase5-dev-tools qtpositioning5-dev libqt5sql5-mysql libqt5texttospeech5-dev" >> $DOCKERFILE
+        fi
+
+
+    elif [[ "$plugin" = "gtk" ]]
+        #Downloading packages for gtk
+        then
+
+        #Installing dependencies
+        if [ "$DISTRIBUTION" = "alt" ]
+        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL libgtk+3-devel librsvg-devel patchelf" >> $DOCKERFILE
+        elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ]
+        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL gtk3-devel librsvg2-devel patchelf" >> $DOCKERFILE
+        elif [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]
+        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL libgtk-3-dev librsvg2-dev pkg-config patchelf" >> $DOCKERFILE
+        fi
+
+
+    elif [[ "$plugin" = "ncurses" ]]
+        #Downloading packages for ncurses
+        then
+        if [ "$DISTRIBUTION" = "alt" ]
+        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL libncurses-devel libncurses++-devel termutils-devel" >> $DOCKERFILE
+        elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "centos" ]
+        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL ncurses-devel ncurses-c++-libs" >> $DOCKERFILE
+        elif [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "mageia" ]
+        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL ncurses-devel" >> $DOCKERFILE 
+        elif [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]
+        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL libncurses5-dev libncursesw5-dev" >> $DOCKERFILE
+        fi
+
+    elif [[ "$plugin" = "gstreamer" ]]
+        #Downloading packages for gstreamer
+        then
+
+        if [ "$DISTRIBUTION" = "alt" ] || [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ]
+        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL gstreamer-devel patchelf" >> $DOCKERFILE
+        elif [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]
+        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL libgstreamer1.0-dev patchelf" >> $DOCKERFILE 
+        fi
+    fi
+done
+
+docker build -t package-to-appimage/$DOCKER_IMAGE$plugins_with_arguments $DOCKERFILE_DIR
