@@ -206,8 +206,8 @@ then DISTRIBUTION+=$plugins_for_docker
     docker images | grep -e "$DISTRIBUTION"
     if [ $? != "0" ]
     then
-        echo "Distribution with plugins not found, please create it with \"package-to-appimage-create-docker-image\""
-        exit 1
+        echo "Distribution with plugins not found, please create it with"
+        $(dirname "$0")/package-to-appimage-create-docker-image.sh --distribution $(echo "$DISTRIBUTION" | awk -F : '{ print $1 }' | awk -F / '{ print $2 }' | awk -F - '{ print $1 }') $plugins_with_arguments
     fi
 fi
 
