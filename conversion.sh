@@ -173,11 +173,11 @@ for plugin in ${PLUGINS[*]}
 
         #Installing dependencies
         if [ "$DISTRIBUTION" = "alt" ]
-        then $PACKAGE_MANAGER_REPO_INSTALL libgtk+3-devel librsvg-devel patchelf
+        then $PACKAGE_MANAGER_REPO_INSTALL libgtk+3-devel librsvg-devel patchelf gobject-introspection-devel
         elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ]
-        then $PACKAGE_MANAGER_REPO_INSTALL gtk3-devel librsvg2-devel patchelf
+        then $PACKAGE_MANAGER_REPO_INSTALL gtk3-devel librsvg2-devel patchelf gobject-introspection-devel
         elif [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]
-        then $PACKAGE_MANAGER_REPO_INSTALL libgtk-3-dev librsvg2-dev pkg-config patchelf 
+        then $PACKAGE_MANAGER_REPO_INSTALL libgtk-3-dev librsvg2-dev pkg-config patchelf libgirepository1.0-dev
         fi
 
         cd /tmp/linuxdeploy/usr/bin/ && wget https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh

@@ -117,7 +117,7 @@ mkdir $MOUNT_DIRECTORY
 
 # Copying package file
 cp "$PACKAGE" $MOUNT_DIRECTORY
-cp $(dirname "$0")/mnt/* $MOUNT_DIRECTORY
+cp $(dirname "$0")/conversion*.sh $MOUNT_DIRECTORY
 # Saving name of package
 PACKAGE_FILE=$(echo "$PACKAGE" | awk -F / '{print $NF}')
 
