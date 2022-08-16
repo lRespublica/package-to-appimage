@@ -47,7 +47,7 @@ DOCKER_IMAGE=""
 PACKAGE_MANAGER_REPO_INSTALL=""
 PACKAGE_MANAGER_UPDATE=""
 
-DOCKERFILE_DIR="/tmp/package-to-appimage"
+DOCKERFILE_DIR=$(mktemp -d $TMPDIR/docker-mount_XXX)
 DOCKERFILE=$DOCKERFILE_DIR
 DOCKERFILE+="/Dockerfile"
 
@@ -105,7 +105,7 @@ if [ "$DISTRIBUTION" = "" ]
         DOCKER_IMAGE=$DISTRIBUTION
 fi
 
-mkdir -p /tmp/package-to-appimage
+mkdir -p $TMPDIR/package-to-appimage
 printf "FROM $DOCKER_IMAGE\n" > $DOCKERFILE
 
 case "$DISTRIBUTION" in 

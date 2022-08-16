@@ -27,7 +27,7 @@ function plugin_is_correct()
 }
 
 # Declaration of parameters
-MOUNT_DIRECTORY="/tmp/mount"
+MOUNT_DIRECTORY+=$(mktemp -d $TMPDIR/appimage-mount_XXX)
 
 PACKAGE=""
 PLUGINS=""
@@ -207,7 +207,7 @@ then DISTRIBUTION+=$plugins_for_docker
     if [ $? != "0" ]
     then
         echo "Distribution with plugins not found, please create it with"
-        $(dirname "$0")/package-to-appimage-create-docker-image.sh --distribution $(echo "$DISTRIBUTION" | awk -F : '{ print $1 }' | awk -F / '{ print $2 }' | awk -F - '{ print $1 }') $plugins_with_arguments
+        $(dirname "$0")/package-to-appimage-create-docker-image --distribution $(echo "$DISTRIBUTION" | awk -F : '{ print $1 }' | awk -F / '{ print $2 }' | awk -F - '{ print $1 }') $plugins_with_arguments
     fi
 fi
 

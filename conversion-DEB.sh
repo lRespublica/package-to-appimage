@@ -79,10 +79,10 @@ for plugin in ${PLUGINS[*]}
 done
 
 # Unpacking archive
-dpkg --extract /mnt/"$PACKAGE_FILE" /tmp/AppDir
+dpkg --extract /mnt/"$PACKAGE_FILE" $TMPDIR/AppDir
 
 # Getting desktop file of package
-DESKTOP_FILE+="/tmp/AppDir"
+DESKTOP_FILE+="$TMPDIR/AppDir"
 DESKTOP_FILE+=$(dpkg -L "$PACKAGE" | grep -e "application" | grep -e ".desktop" -m 1)
 
 echo "DESKTOP_FILE=$DESKTOP_FILE"
@@ -97,7 +97,7 @@ echo "PACKAGE_TITLE=$PACKAGE_TITLE"
 ICON_NAME=$(cat "$DESKTOP_FILE" | grep -e ^Icon= -m 1 | sed 's/Icon=//g')
 echo "ICON_NAME=$ICON_NAME"
 
-ICON+="/tmp/AppDir"
+ICON+="$TMPDIR/AppDir"
 ICON+=$(rpmquery --list "$PACKAGE" | grep -e "icon" | grep -v "1024x1024" | grep -e "$ICON_NAME".png -m 1)
 echo "ICON=$ICON"
 
@@ -105,26 +105,26 @@ echo "ICON=$ICON"
 if [ -f "$ICON_NAME" ]                                                                                              # If icon name is a file
 then                                                                                                                # For case like "/usr/share/icons/breeze/applets/16/car.svg"
     echo "updating icon..."
-    ICON=/tmp/AppDir$(echo "$ICON_NAME" | sed 's/\/[^/]*$//')/"$PACKAGE".$(echo "$ICON_NAME" | sed 's/^.*\.//')     # New icon file should have be in same dir with older one, and have same extension, but different name
-    mv /tmp/AppDir"$ICON_NAME" "$ICON"                                                                              # Move icon with same name as package. Required for auto-generated .desktop file
+    ICON=$TMPDIR/AppDir$(echo "$ICON_NAME" | sed 's/\/[^/]*$//')/"$PACKAGE".$(echo "$ICON_NAME" | sed 's/^.*\.//')     # New icon file should have be in same dir with older one, and have same extension, but different name
+    mv $TMPDIR/AppDir"$ICON_NAME" "$ICON"                                                                              # Move icon with same name as package. Required for auto-generated .desktop file
     ICON_NAME=$PACKAGE                                                                                              # Turn "/usr/share/icons/breeze/applets/16/car.svg" into "car"
-    DESKTOP_FILE="/tmp/AppDir"                                                                                      # Clean desktop file, instead of the existing one create a new one
+    DESKTOP_FILE="$TMPDIR/AppDir"                                                                                      # Clean desktop file, instead of the existing one create a new one
     echo "ICON=$ICON"
 fi
 # END OF WARNING                                                  
 
 # Finding executable and icon files
-EXECUTABLE+="/tmp/AppDir"
+EXECUTABLE+="$TMPDIR/AppDir"
 EXECUTABLE+=$(dpkg -L "$PACKAGE" | grep -e /bin/ | grep -e "$PACKAGE_NAME$" -m 1)
 echo "EXECUTABLE=$EXECUTABLE"
 
-if [ "$EXECUTABLE" = "/tmp/AppDir" ]
+if [ "$EXECUTABLE" = "$TMPDIR/AppDir" ]
     then
     echo "Executable not found, searching in games..."
     EXECUTABLE+=$(dpkg -L "$PACKAGE" | grep -e /games/ | grep -e "$PACKAGE_NAME$" -m 1)
     echo "EXECUTABLE=$EXECUTABLE"
 
-    if [ "$EXECUTABLE" = "/tmp/AppDir" ]
+    if [ "$EXECUTABLE" = "$TMPDIR/AppDir" ]
         then
         echo "Executable not found, appimage creation aborted..."
         exit 1
@@ -132,7 +132,7 @@ if [ "$EXECUTABLE" = "/tmp/AppDir" ]
 fi
 
 # If icon is not found
-if [ "$ICON" = "/tmp/AppDir" ]
+if [ "$ICON" = "$TMPDIR/AppDir" ]
     then
     echo "Icon not found"
 
@@ -143,24 +143,26 @@ if [ "$ICON" = "/tmp/AppDir" ]
         # Set same name like package
         ICON_NAME="$PACKAGE"
     fi
-    mkdir /tmp/AppDir/usr/share/icons
-    cp /usr/share/icons/Adwaita/256x256/legacy/user-info.png /tmp/AppDir/usr/share/icons/"$ICON_NAME".png
-    ICON="/tmp/AppDir/usr/share/icons/$ICON_NAME.png"
+    mkdir $TMPDIR/AppDir/usr/share/icons
+    cp /usr/share/icons/Adwaita/256x256/legacy/user-info.png $TMPDIR/AppDir/usr/share/icons/"$ICON_NAME".png
+    ICON="$TMPDIR/AppDir/usr/share/icons/$ICON_NAME.png"
 fi
 
+LINUXDEPLOY=$TMPDIR/linuxdeploy/AppRun 
+
 # If there are no desktop file
-if [ "$DESKTOP_FILE" = "/tmp/AppDir" ]
+if [ "$DESKTOP_FILE" = "$TMPDIR/AppDir" ]
     then
     # Use --create-desktop-file option
-    echo "/tmp/linuxdeploy/AppRun --appdir /tmp/AppDir --executable $EXECUTABLE --create-desktop-file --icon-file $ICON $plugins_with_arguments --output appimage"
-    cd /tmp && /tmp/linuxdeploy/AppRun --appdir /tmp/AppDir/ --executable "$EXECUTABLE" --create-desktop-file --icon-file "$ICON" $plugins_with_arguments --output appimage
+    echo "$TMPDIR/linuxdeploy/AppRun --appdir $TMPDIR/AppDir --executable $EXECUTABLE --create-desktop-file --icon-file $ICON $plugins_with_arguments --output appimage"
+    cd $TMPDIR && $LINUXDEPLOY --appdir $TMPDIR/AppDir/ --executable "$EXECUTABLE" --create-desktop-file --icon-file "$ICON" $plugins_with_arguments --output appimage
     else
     # Use .desktop file if it exists
-    echo "/tmp/linuxdeploy/AppRun --appdir /tmp/AppDir --executable $EXECUTABLE --desktop-file $DESKTOP_FILE --icon-file $ICON $plugins_with_arguments --output appimage"
-    cd /tmp && /tmp/linuxdeploy/AppRun --appdir /tmp/AppDir/ --executable "$EXECUTABLE" --desktop-file "$DESKTOP_FILE" --icon-file "$ICON" $plugins_with_arguments --output appimage
+    echo "$TMPDIR/linuxdeploy/AppRun --appdir $TMPDIR/AppDir --executable $EXECUTABLE --desktop-file $DESKTOP_FILE --icon-file $ICON $plugins_with_arguments --output appimage"
+    cd $TMPDIR && $LINUXDEPLOY --appdir $TMPDIR/AppDir/ --executable "$EXECUTABLE" --desktop-file "$DESKTOP_FILE" --icon-file "$ICON" $plugins_with_arguments --output appimage
 fi
 
 # Copy AppImage file to host directory
-cp /tmp/*.AppImage /mnt/
+cp $TMPDIR/*.AppImage /mnt/
 
 printf "\n\nNow you can find your AppImage $MOUNT_DIRECTORY/$(ls /mnt/ | grep -e "$PACKAGE_TITLE" -m 1)\n"

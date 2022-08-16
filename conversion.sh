@@ -16,6 +16,8 @@ function plugin_is_correct()
     fi
 }
 
+export TMPDIR=/tmp/ 
+
 # Declaration of parameters
 DISTRIBUTION=""
 PACKAGE=""
@@ -131,7 +133,7 @@ fi
 $PACKAGE_MANAGER_FILE_INSTALL /mnt/"$PACKAGE_FILE"
 
 #Preparing LinuxDeploy
-cd /tmp/
+cd $TMPDIR
 wget -c -N https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
 chmod +x ./linuxdeploy-x86_64.AppImage
 ./linuxdeploy-x86_64.AppImage --appimage-extract
@@ -160,12 +162,12 @@ for plugin in ${PLUGINS[*]}
         then $PACKAGE_MANAGER_REPO_INSTALL qtbase5-dev qtbase5-dev-tools qtpositioning5-dev libqt5sql5-mysql libqt5texttospeech5-dev
         fi
 
-        cd /tmp/linuxdeploy/plugins
+        cd $TMPDIR/linuxdeploy/plugins
         wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
         chmod +x ./linuxdeploy-plugin-qt-x86_64.AppImage && ./linuxdeploy-plugin-qt-x86_64.AppImage --appimage-extract 
         mv ./squashfs-root ./linuxdeploy-plugin-qt
         cd -
-        ln -s /tmp/linuxdeploy/plugins/linuxdeploy-plugin-qt/AppRun /tmp/linuxdeploy/usr/bin/linuxdeploy-plugin-qt
+        ln -s $TMPDIR/linuxdeploy/plugins/linuxdeploy-plugin-qt/AppRun $TMPDIR/linuxdeploy/usr/bin/linuxdeploy-plugin-qt
 
     elif [[ "$plugin" = "gtk" ]]
         #Downloading gtk plugin and adding it in linuxdeploy
@@ -180,7 +182,7 @@ for plugin in ${PLUGINS[*]}
         then $PACKAGE_MANAGER_REPO_INSTALL libgtk-3-dev librsvg2-dev pkg-config patchelf libgirepository1.0-dev
         fi
 
-        cd /tmp/linuxdeploy/usr/bin/ && wget https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh
+        cd $TMPDIR/linuxdeploy/usr/bin/ && wget https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh
         chmod +x ./linuxdeploy-plugin-gtk.sh && cd -
 
     elif [[ "$plugin" = "ncurses" ]]
@@ -197,7 +199,7 @@ for plugin in ${PLUGINS[*]}
         fi
 
         then
-        cd /tmp/linuxdeploy/usr/bin/ && wget https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-ncurses/master/linuxdeploy-plugin-ncurses.sh 
+        cd $TMPDIR/linuxdeploy/usr/bin/ && wget https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-ncurses/master/linuxdeploy-plugin-ncurses.sh 
         chmod +x ./linuxdeploy-plugin-ncurses.sh && cd -
     elif [[ "$plugin" = "gstreamer" ]]
         #Downloading gstreamer plugin and adding it in linuxdeploy
@@ -209,14 +211,14 @@ for plugin in ${PLUGINS[*]}
         then $PACKAGE_MANAGER_REPO_INSTALL libgstreamer1.0-dev patchelf 
         fi
 
-        cd /tmp/linuxdeploy/usr/bin/ && wget https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gstreamer/master/linuxdeploy-plugin-gstreamer.sh
+        cd $TMPDIR/linuxdeploy/usr/bin/ && wget https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gstreamer/master/linuxdeploy-plugin-gstreamer.sh
         chmod +x ./linuxdeploy-plugin-gstreamer.sh && cd -
     fi
 done
 
 
 # Preparing AppDir
-mkdir /tmp/AppDir
+mkdir $TMPDIR/AppDir
 
 # Starting conversion
 /mnt/conversion-"$PACKAGE_TYPE".sh --package-file "$PACKAGE_FILE" --package "$PACKAGE" --mount-directory "$MOUNT_DIRECTORY" $plugins_with_arguments
