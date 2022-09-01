@@ -16,7 +16,7 @@ function plugin_is_correct()
     fi
 }
 
-export TMPDIR=/tmp/ 
+export TMPDIR=/tmp
 
 # Declaration of parameters
 DISTRIBUTION=""

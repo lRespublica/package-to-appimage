@@ -98,7 +98,7 @@ ICON_NAME=$(cat "$DESKTOP_FILE" | grep -e ^Icon= -m 1 | sed 's/Icon=//g')
 echo "ICON_NAME=$ICON_NAME"
 
 ICON+="$TMPDIR/AppDir"
-ICON+=$(rpmquery --list "$PACKAGE" | grep -e "icon" | grep -v "1024x1024" | grep -e "$ICON_NAME".png -m 1)
+ICON+=$(dpkg -L "$PACKAGE" | grep -e "icon" | grep -v "1024x1024" | grep -e "$ICON_NAME".png -m 1)
 echo "ICON=$ICON"
 
 # WARNING, IT IS A KLUDGE
@@ -124,6 +124,34 @@ if [ "$EXECUTABLE" = "$TMPDIR/AppDir" ]
     EXECUTABLE+=$(dpkg -L "$PACKAGE" | grep -e /games/ | grep -e "$PACKAGE_NAME$" -m 1)
     echo "EXECUTABLE=$EXECUTABLE"
 
+    if [ "$EXECUTABLE" = "$TMPDIR/AppDir" ]
+        then
+        echo "Executable not found, appimage creation aborted..."
+        exit 1
+    fi
+fi
+
+
+if [ "$EXECUTABLE" = "$TMPDIR/AppDir" ]
+    then
+    echo "Executable not found, searching in games..."
+    EXECUTABLE+=$(dpkg -L "$PACKAGE" | grep -e /games/ | grep -e "$PACKAGE_NAME$" -m 1)
+    echo "EXECUTABLE=$EXECUTABLE"
+fi
+
+if [ "$EXECUTABLE" = "$TMPDIR/AppDir" ]
+    then
+    echo "Executable not found, searching by the name of package..."
+    EXECUTABLE+=$(dpkg -L "$PACKAGE" | grep -e /bin/ | grep -e "$PACKAGE$" -m 1)
+
+    # Clear desktop file information to create a new one when creating appimage
+    DESKTOP_FILE="$TMPDIR/AppDir"
+    PACKAGE_NAME=$PACKAGE
+
+    echo "EXECUTABLE=$EXECUTABLE"
+    echo "DESKTOP_FILE=$DESKTOP_FILE"           
+    echo "PACKAGE_NAME=$PACKAGE_NAME"
+    
     if [ "$EXECUTABLE" = "$TMPDIR/AppDir" ]
         then
         echo "Executable not found, appimage creation aborted..."

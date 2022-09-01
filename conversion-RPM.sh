@@ -118,12 +118,27 @@ EXECUTABLE+="$TMPDIR/AppDir"
 EXECUTABLE+=$(rpmquery --list "$PACKAGE" | grep -e /bin/ | grep -e "$PACKAGE_NAME$" -m 1)
 echo "EXECUTABLE=$EXECUTABLE"
 
+
 if [ "$EXECUTABLE" = "$TMPDIR/AppDir" ]
     then
     echo "Executable not found, searching in games..."
-    EXECUTABLE+=$(rpmquery --list "$PACKAGE" | grep -e /games/ | grep -e "$PACKAGE_NAME"$ -m 1)
+    EXECUTABLE+=$(rpmquery --list "$PACKAGE" | grep -e /games/ | grep -e "$PACKAGE_NAME$" -m 1)
     echo "EXECUTABLE=$EXECUTABLE"
+fi
 
+if [ "$EXECUTABLE" = "$TMPDIR/AppDir" ]
+    then
+    echo "Executable not found, searching by the name of package..."
+    EXECUTABLE+=$(rpmquery --list "$PACKAGE" | grep -e /bin/ | grep -e "$PACKAGE$" -m 1)
+
+    # Clear desktop file information to create a new one when creating appimage
+    DESKTOP_FILE="$TMPDIR/AppDir"
+    PACKAGE_NAME=$PACKAGE
+
+    echo "EXECUTABLE=$EXECUTABLE"
+    echo "DESKTOP_FILE=$DESKTOP_FILE"           
+    echo "PACKAGE_NAME=$PACKAGE_NAME"
+    
     if [ "$EXECUTABLE" = "$TMPDIR/AppDir" ]
         then
         echo "Executable not found, appimage creation aborted..."
