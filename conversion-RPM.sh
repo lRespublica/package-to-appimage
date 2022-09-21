@@ -79,7 +79,8 @@ for plugin in ${PLUGINS[*]}
 done
 
 # Unpacking archive
-cd $TMPDIR/AppDir && rpm2cpio /mnt/"$PACKAGE_FILE" | cpio -idmv && cd -
+#cd $TMPDIR/AppDir && rpm2cpio /mnt/"$PACKAGE_FILE" | cpio -idmv && cd -
+/mnt/unpack-rpm.sh -D $TMPDIR/AppDir --with-dependencies "$PACKAGE"
 
 # Getting desktop file of package
 DESKTOP_FILE+="$TMPDIR/AppDir"
