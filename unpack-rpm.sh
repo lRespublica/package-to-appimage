@@ -75,7 +75,7 @@ function unpack_package()
         do
             if [ "${DEPENDENCY:0:1}" = "/" ]
             then
-                cp --parents -t "$UNPACK_DIRECTORY" "$DEPENDENCY" 
+                unpack_package $(rpm -qf $DEPENDENCY) "1"
 
             elif [ "$DEPENDENCY" = ">=" ]
             then
@@ -91,7 +91,7 @@ function unpack_package()
             
             elif [ "$(echo "$DEPENDENCY" | head -c 3)" = "lib" ] && [ "$3" = "nolib" ]
             then
-                cp --parents -t "$UNPACK_DIRECTORY"  $(whereis "$(echo $DEPENDENCY | cut -d "(" -f 1)" | cut -d " " -f 2-)
+                cp --parents -t "$UNPACK_DIRECTORY" $(whereis "$(echo $DEPENDENCY | cut -d "(" -f 1)" | cut -d " " -f 2-)
 
             elif [ "$(echo $DEPENDENCY | grep -e "rpmlib")" != "" ]
             then
@@ -105,3 +105,5 @@ function unpack_package()
 }
 
 unpack_package "$PACKAGE" $WITH_DEPENDENCIES
+unpack_package libavfilter7 $WITH_DEPENDENCIES
+

@@ -27,6 +27,8 @@ ICON_NAME=""
 EXECUTABLE=""
 ICON=""
 
+ADDONS_ENABLED=""
+
 # Close programm without arguments
 if [ $# -eq 0 ]
 then
@@ -66,6 +68,9 @@ do
                     else printf "\tPlease, specify the plugin. $2 is not correct plugin\n";exit 1;
                 fi;            
                 shift;shift;;
+    
+    --kde)  KDE_ENABLED+="--kde";
+            shift;;
 
     *) printf "$1 is not an option\n"; exit 1;;
     esac
@@ -81,6 +86,11 @@ done
 # Unpacking archive
 #cd $TMPDIR/AppDir && rpm2cpio /mnt/"$PACKAGE_FILE" | cpio -idmv && cd -
 /mnt/unpack-rpm.sh -D $TMPDIR/AppDir --with-dependencies "$PACKAGE"
+
+if [ "$(echo "$ADDONS_ENABLED" | grep -e "kde")" != "" ]
+then
+    /mnt/unpack-rpm.sh -D $TMPDIR/AppDir --with-dependencies kde5-runtime 
+fi
 
 # Getting desktop file of package
 DESKTOP_FILE+="$TMPDIR/AppDir"

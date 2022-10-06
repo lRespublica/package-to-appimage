@@ -4,9 +4,10 @@
 function help()
 {
     printf '\n\t--package [package.rpm, package.deb] \t specify the package to repackage\n'
-    printf '\t--plugin [plugin]\t\t\t specify the plugin to use\n\t\t\t\t\t\t available plugins - qt gtk ncurses gstreamer\n\n'
+    printf '\t--plugin [plugin]\t\t\t specify the plugin to use\n\t\t\t\t\t\t available plugins - qt gtk ncurses gstreamer\n'
+    printf '\t--kde\t\t\t\t\t use for applications with kde. Includes some libraries in the image\n\n'
     printf '\t--mount-directory\t\t\t specify directory for mounting into docker\n'
-    printf '\n\t/--use-existants-container\t\t use existance container, you need to create it before with "package-to-appimage-create-docker-image"\n'
+    printf '\t/--use-existants-container\t\t use existance container, you need to create it before with "package-to-appimage-create-docker-image"\n'
     printf '\t\-E\n'
 }
 
@@ -30,6 +31,7 @@ function plugin_is_correct()
 MOUNT_DIRECTORY+=$(mktemp -d $TMPDIR/appimage-mount_XXX)
 
 PACKAGE=""
+ADDONS_ENABLED=""
 PLUGINS=""
 PLUGINS_COUNT=0      
 
@@ -79,6 +81,9 @@ do
                     else printf "\tPlease, specify the plugin. $2 is not correct plugin\n";exit 1;
                 fi;            
                 shift;shift;;
+    
+    --kde)  ADDONS_ENABLED+="--kde";
+            shift;;
 
     --help) help;exit;;
 
@@ -214,7 +219,7 @@ fi
 docker run -ti --rm -v "$MOUNT_DIRECTORY/:/mnt" --security-opt seccomp=unconfined $DISTRIBUTION /bin/bash /mnt/conversion.sh  \
 --package-manager-update "$PACKAGE_MANAGER_UPDATE"  --package-manager-file-install "$PACKAGE_MANAGER_FILE_INSTALL" \
 --package-manager-repo-install "$PACKAGE_MANAGER_REPO_INSTALL" --package-file "$PACKAGE_FILE" --package-type "$PACKAGE_TYPE" \
---package "$PACKAGE_NAME" --distribution "$DISTRIBUTION" --mount-directory "$MOUNT_DIRECTORY" $plugins_with_arguments
+--package "$PACKAGE_NAME" --distribution "$DISTRIBUTION" --mount-directory "$MOUNT_DIRECTORY" $ADDONS_ENABLED $plugins_with_arguments
 
 rm -f $MOUNT_DIRECTORY/"$PACKAGE_FILE"
 rm -f $MOUNT_DIRECTORY/conversion*.sh

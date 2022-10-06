@@ -28,6 +28,7 @@ PACKAGE_MANAGER_REPO_INSTALL=""
 PACKAGE_MANAGER_FILE_INSTALL=""
 PLUGINS=""
 PLUGINS_COUNT=0
+ADDONS_ENABLED=""
 
 while [ "$1" != "" ]
 do
@@ -96,6 +97,9 @@ do
                     else printf "\tPlease, specify the plugin. $2 is not correct plugin\n";exit 1;
                 fi;            
                 shift;shift;;
+
+    --kde)  ADDONS_ENABLED+="--kde";
+            shift;;
 
     *) printf "$1 is not an option\n"; exit 1;;
     esac
@@ -221,4 +225,4 @@ done
 mkdir $TMPDIR/AppDir
 
 # Starting conversion
-/mnt/conversion-"$PACKAGE_TYPE".sh --package-file "$PACKAGE_FILE" --package "$PACKAGE" --mount-directory "$MOUNT_DIRECTORY" $plugins_with_arguments
+/mnt/conversion-"$PACKAGE_TYPE".sh --package-file "$PACKAGE_FILE" --package "$PACKAGE" --mount-directory "$MOUNT_DIRECTORY" $ADDONS_ENABLED $plugins_with_arguments
