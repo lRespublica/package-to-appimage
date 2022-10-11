@@ -28,7 +28,7 @@ PACKAGE_MANAGER_REPO_INSTALL=""
 PACKAGE_MANAGER_FILE_INSTALL=""
 PLUGINS=""
 PLUGINS_COUNT=0
-ADDONS_ENABLED=""
+KDE_ENABLED=""
 
 while [ "$1" != "" ]
 do
@@ -98,7 +98,7 @@ do
                 fi;            
                 shift;shift;;
 
-    --kde)  ADDONS_ENABLED+="--kde";
+    --kde)  KDE_ENABLED="--kde";
             shift;;
 
     *) printf "$1 is not an option\n"; exit 1;;
@@ -220,9 +220,20 @@ for plugin in ${PLUGINS[*]}
     fi
 done
 
-
 # Preparing AppDir
 mkdir $TMPDIR/AppDir
 
+if [ "$KDE_ENABLED" != "" ]
+then
+    if [ "$DISTRIBUTION" = "alt"  ]
+    then
+        $PACKAGE_MANAGER_REPO_INSTALL kde5-runtime kde5-kio-extras
+        /mnt/unpack-$PACKAGE_TYPE.sh -D $TMPDIR/AppDir --with-dependencies kde5-runtime kde5-kio-extras kf5-purpose
+        cp -r $TMPDIR/AppDir/usr/lib64/qt5/plugins/ $TMPDIR/AppDir/usr/plugins
+    fi
+fi
+
+/mnt/unpack-$PACKAGE_TYPE.sh -D $TMPDIR/AppDir --with-dependencies "$PACKAGE"
+
 # Starting conversion
-/mnt/conversion-"$PACKAGE_TYPE".sh --package-file "$PACKAGE_FILE" --package "$PACKAGE" --mount-directory "$MOUNT_DIRECTORY" $ADDONS_ENABLED $plugins_with_arguments
+/mnt/conversion-"$PACKAGE_TYPE".sh --package-file "$PACKAGE_FILE" --package "$PACKAGE" --mount-directory "$MOUNT_DIRECTORY" $plugins_with_arguments

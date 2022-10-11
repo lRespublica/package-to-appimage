@@ -31,7 +31,7 @@ function plugin_is_correct()
 MOUNT_DIRECTORY+=$(mktemp -d $TMPDIR/appimage-mount_XXX)
 
 PACKAGE=""
-ADDONS_ENABLED=""
+KDE_ENABLED=""
 PLUGINS=""
 PLUGINS_COUNT=0      
 
@@ -40,6 +40,7 @@ PACKAGE_TYPE=""
 USE_OF_EXISTED_IMAGE="0"
 
 DISTRIBUTION=""
+NAME_OF_IMAGE=""
 PACKAGE_MANAGER_FILE_INSTALL=""
 PACKAGE_MANAGER_REPO_INSTALL=""
 PACKAGE_MANAGER_UPDATE=""
@@ -82,7 +83,7 @@ do
                 fi;            
                 shift;shift;;
     
-    --kde)  ADDONS_ENABLED+="--kde";
+    --kde)  KDE_ENABLED="--kde";
             shift;;
 
     --help) help;exit;;
@@ -98,10 +99,11 @@ for plugin in ${PLUGINS[*]}
        plugins_with_arguments+="${plugin}"
 done
 
+#Creating name of running image, for example "package-to-appimage/alt-plugin-qt"
 plugins_for_docker=""
 if [ $USE_OF_EXISTED_IMAGE = "1" ]
 then
-    DISTRIBUTION+="package-to-appimage/"
+    NAME_OF_IMAGE+="package-to-appimage/"
     for plugin in ${PLUGINS[*]}
     do plugins_for_docker+="-plugin"
        plugins_for_docker+="-${plugin}"
@@ -140,6 +142,7 @@ if [ "$PACKAGE_TYPE" = "RPM" ]
     if [ "$VENDOR" == "ALT Linux Team" ]
         then
         DISTRIBUTION+="alt"
+        NAME_OF_IMAGE+="alt"
         PACKAGE_MANAGER_UPDATE="apt-get update"
         PACKAGE_MANAGER_REPO_INSTALL="apt-get install --fix-missing -y"
         PACKAGE_MANAGER_FILE_INSTALL="apt-get install --fix-missing -fy"
@@ -147,6 +150,7 @@ if [ "$PACKAGE_TYPE" = "RPM" ]
     elif [ "$VENDOR" = "Fedora Project" ]
         then
         DISTRIBUTION+="fedora"
+        NAME_OF_IMAGE+="fedora"
         PACKAGE_MANAGER_UPDATE="dnf update -y"
         PACKAGE_MANAGER_REPO_INSTALL="dnf install -y"
         PACKAGE_MANAGER_FILE_INSTALL="dnf install -y"
@@ -154,6 +158,7 @@ if [ "$PACKAGE_TYPE" = "RPM" ]
     elif [ "$VENDOR" = "openSUSE" ]
         then
         DISTRIBUTION+="opensuse/leap"
+        NAME_OF_IMAGE+="opensuse/leap"
         PACKAGE_MANAGER_UPDATE="zypper update -y"
         PACKAGE_MANAGER_REPO_INSTALL="zypper install -y"
         PACKAGE_MANAGER_FILE_INSTALL="zypper install -y"
@@ -161,6 +166,7 @@ if [ "$PACKAGE_TYPE" = "RPM" ]
     elif [ "$VENDOR" = "CentOS" ]
         then
         DISTRIBUTION+="centos"
+        NAME_OF_IMAGE+="centos"
         PACKAGE_MANAGER_UPDATE="dnf update -y"
         PACKAGE_MANAGER_REPO_INSTALL="dnf install -y"
         PACKAGE_MANAGER_FILE_INSTALL="dnf install --nobest -y"
@@ -168,6 +174,7 @@ if [ "$PACKAGE_TYPE" = "RPM" ]
     elif [ "$VENDOR" = "Mageia.Org" ]
         then
         DISTRIBUTION+="mageia"
+        NAME_OF_IMAGE+="mageia"
         PACKAGE_MANAGER_UPDATE="urpmi.update -a"
         PACKAGE_MANAGER_REPO_INSTALL="urpmi --auto"
         PACKAGE_MANAGER_FILE_INSTALL="urpmi --auto"
@@ -190,12 +197,14 @@ elif [ "$PACKAGE_TYPE" = "Deb" ]
     if [ "$VENDOR" = "Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>" ]
         then
         DISTRIBUTION+="ubuntu:rolling"
+        NAME_OF_IMAGE+="ubuntu:rolling"
         PACKAGE_MANAGER_UPDATE="apt-get update"
         PACKAGE_MANAGER_REPO_INSTALL="apt-get install -y "
         PACKAGE_MANAGER_FILE_INSTALL="apt-get install -fy "
 
         else
         DISTRIBUTION+="debian:testing"
+        NAME_OF_IMAGE+="debian:testing"
         PACKAGE_MANAGER_UPDATE="apt-get update"
         PACKAGE_MANAGER_REPO_INSTALL="apt-get install -y "
         PACKAGE_MANAGER_FILE_INSTALL="apt-get install -y "
@@ -207,19 +216,20 @@ else
 fi
 
 if [ $USE_OF_EXISTED_IMAGE = "1" ]
-then DISTRIBUTION+=$plugins_for_docker
-    docker images | grep -e "$DISTRIBUTION"
+then NAME_OF_IMAGE+=$plugins_for_docker
+    docker images | grep -e "$NAME_OF_IMAGE"
     if [ $? != "0" ]
     then
         echo "Distribution with plugins not found, please create it with"
-        $(dirname "$0")/package-to-appimage-create-docker-image --distribution $(echo "$DISTRIBUTION" | awk -F : '{ print $1 }' | awk -F / '{ print $2 }' | awk -F - '{ print $1 }') $plugins_with_arguments
+        $(dirname "$0")/package-to-appimage-create-docker-image --distribution $(echo "$NAME_OF_IMAGE" | awk -F : '{ print $1 }' | awk -F / '{ print $2 }' | awk -F - '{ print $1 }') $plugins_with_arguments
     fi
 fi
 
-docker run -ti --rm -v "$MOUNT_DIRECTORY/:/mnt" --security-opt seccomp=unconfined $DISTRIBUTION /bin/bash /mnt/conversion.sh  \
+docker run -ti --rm -v "$MOUNT_DIRECTORY/:/mnt" --security-opt seccomp=unconfined $NAME_OF_IMAGE /bin/bash /mnt/conversion.sh  \
 --package-manager-update "$PACKAGE_MANAGER_UPDATE"  --package-manager-file-install "$PACKAGE_MANAGER_FILE_INSTALL" \
 --package-manager-repo-install "$PACKAGE_MANAGER_REPO_INSTALL" --package-file "$PACKAGE_FILE" --package-type "$PACKAGE_TYPE" \
---package "$PACKAGE_NAME" --distribution "$DISTRIBUTION" --mount-directory "$MOUNT_DIRECTORY" $ADDONS_ENABLED $plugins_with_arguments
+--package "$PACKAGE_NAME" --distribution "$DISTRIBUTION" --mount-directory "$MOUNT_DIRECTORY" $plugins_with_arguments $KDE_ENABLED
 
 rm -f $MOUNT_DIRECTORY/"$PACKAGE_FILE"
 rm -f $MOUNT_DIRECTORY/conversion*.sh
+rm -f $MOUNT_DIRECTORY/unpack*.sh

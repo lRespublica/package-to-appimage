@@ -13,7 +13,7 @@ function help()
 
 WITH_DEPENDENCIES="0"
 UNPACK_DIRECTORY=""
-PACKAGE=""
+PACKAGES=""
 
 # Close programm without arguments
 if [ $# -eq 0 ]
@@ -39,17 +39,13 @@ do
 
     --help) help;exit;;
 
-    *) if [ "$PACKAGE" = "" ] 
-        then PACKAGE=$1; shift;
-
-        else printf "$1 is not an option\n"; help; exit 1;
-        fi;;
+    *) PACKAGES+="$1 ";shift;;
     esac
 done
 
 echo "$WITH_DEPENDENCIES"
 echo "$UNPACK_DIRECTORY"
-echo "$PACKAGE"
+echo "$PACKAGES"
 
 if [ "$UNPACK_DIRECTORY" = "" ]
     then 
@@ -57,9 +53,9 @@ if [ "$UNPACK_DIRECTORY" = "" ]
     exit 1;
 fi
 
-if [ "$PACKAGE" = "" ]
+if [ "$PACKAGES" = "" ]
     then
-    printf "Please, specify package\n"
+    printf "Please, specify PACKAGES\n"
 fi
 
 mkdir -p "$UNPACK_DIRECTORY"
@@ -69,27 +65,18 @@ function unpack_package()
     cp --parents -r -t $UNPACK_DIRECTORY $(rpm -ql $1)     
     if [ "$2" = "1" ]
     then
-        DEPENDENCIES_LIST=($(rpm -qR "$1"))
-
-        for DEPENDENCY in "${DEPENDENCIES_LIST[@]}"
+        DEPENDENCIES_LIST=$(rpm -qR $1 | cut -f 1 -d ' ' | sed "s/ /\n/")
+        for DEPENDENCY in ${DEPENDENCIES_LIST[@]}
         do
             if [ "${DEPENDENCY:0:1}" = "/" ]
             then
                 unpack_package $(rpm -qf $DEPENDENCY) "1"
 
-            elif [ "$DEPENDENCY" = ">=" ]
-            then
-                printf "" #"Skipping...\n"
-            
-            elif [ "$(echo $DEPENDENCY | grep -e "set")" != "" ]
-            then
-                printf "" #"Skipping...\n"
-
-            elif [ "$(echo "$DEPENDENCY" | head -c 3)" = "lib" ] && [ "$3" != "nolib" ]
+            elif [ "$(echo "$DEPENDENCY" | head -c 3)" = "lib" ] && [ $(echo "$DEPENDENCY" | grep -e "so") != "" ] && [ "$3" != "nolib" ]
             then
                 unpack_package $(rpm -qf $(whereis "$(echo $DEPENDENCY | cut -d "(" -f 1)" | cut -d " " -f 2-)) "1" "nolib"
             
-            elif [ "$(echo "$DEPENDENCY" | head -c 3)" = "lib" ] && [ "$3" = "nolib" ]
+            elif [ "$(echo "$DEPENDENCY" | head -c 3)" = "lib" ] && [ $(echo "$DEPENDENCY" | grep -e "so") != "" ] && [ "$3" = "nolib" ]
             then
                 cp --parents -t "$UNPACK_DIRECTORY" $(whereis "$(echo $DEPENDENCY | cut -d "(" -f 1)" | cut -d " " -f 2-)
 
@@ -104,6 +91,7 @@ function unpack_package()
     fi                   
 }
 
-unpack_package "$PACKAGE" $WITH_DEPENDENCIES
-unpack_package libavfilter7 $WITH_DEPENDENCIES
-
+for PACKAGE in "${PACKAGES[@]}"
+do
+    unpack_package "$PACKAGE" $WITH_DEPENDENCIES
+done
