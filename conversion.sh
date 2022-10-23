@@ -127,7 +127,8 @@ $PACKAGE_MANAGER_REPO_INSTALL wget file cpio
 
 if [ "$DISTRIBUTION" = "alt" ]
     then $PACKAGE_MANAGER_REPO_INSTALL icon-theme-adwaita
-elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ] || [ "$DISTRIBUTION" = "debian" ]
+elif [ "$DISTRIBUTION" = "fedora" ] || [ "$DISTRIBUTION" = "opensuse" ] || [ "$DISTRIBUTION" = "centos" ] || [ "$DISTRIBUTION" = "mageia" ] || [ "$DISTRIBUTION" = "debian:testing
+" ]
     then $PACKAGE_MANAGER_REPO_INSTALL adwaita-icon-theme
 elif [ "$DISTRIBUTION" = "ubuntu" ] 
     then $PACKAGE_MANAGER_REPO_INSTALL adwaita-icon-theme-full 
@@ -163,7 +164,7 @@ for plugin in ${PLUGINS[*]}
         elif [ "$DISTRIBUTION" = "mageia" ]
         then $PACKAGE_MANAGER_REPO_INSTALL libqwt-qt5-devel
         elif [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]
-        then $PACKAGE_MANAGER_REPO_INSTALL qtbase5-dev qtbase5-dev-tools qtpositioning5-dev libqt5sql5-mysql libqt5texttospeech5-dev
+        then $PACKAGE_MANAGER_REPO_INSTALL qtbase5-dev qtbase5-dev-tools qtpositioning5-dev libqt5sql5-mysql libqt5texttospeech5-dev libqt5multimedia5-plugins
         fi
 
         cd $TMPDIR/linuxdeploy/plugins
@@ -223,17 +224,25 @@ done
 # Preparing AppDir
 mkdir $TMPDIR/AppDir
 
+# Unpack package
+/mnt/unpack.sh -D $TMPDIR/AppDir --with-dependencies --package-type $PACKAGE_TYPE "$PACKAGE"
+
 if [ "$KDE_ENABLED" != "" ]
 then
     if [ "$DISTRIBUTION" = "alt"  ]
     then
-        $PACKAGE_MANAGER_REPO_INSTALL kde5-runtime kde5-kio-extras
-        /mnt/unpack-$PACKAGE_TYPE.sh -D $TMPDIR/AppDir --with-dependencies kde5-runtime kde5-kio-extras kf5-purpose
+        $PACKAGE_MANAGER_REPO_INSTALL kde5-runtime
+        /mnt/unpack.sh --package-type $PACKAGE_TYPE -D $TMPDIR/AppDir -q --with-dependencies kde5-runtime
+    fi
+
+    if [ "$PACKAGE_TYPE" == "RPM" ]
+    then
         cp -r $TMPDIR/AppDir/usr/lib64/qt5/plugins/ $TMPDIR/AppDir/usr/plugins
+
+    else
+        cp -r $TMPDIR/AppDir/usr/lib/x86_64-linux-gnu/qt5/plugins/ $TMPDIR/AppDir/usr/plugins
     fi
 fi
 
-/mnt/unpack-$PACKAGE_TYPE.sh -D $TMPDIR/AppDir --with-dependencies "$PACKAGE"
-
 # Starting conversion
-/mnt/conversion-"$PACKAGE_TYPE".sh --package-file "$PACKAGE_FILE" --package "$PACKAGE" --mount-directory "$MOUNT_DIRECTORY" $plugins_with_arguments
+/mnt/conversion-"$PACKAGE_TYPE".sh --package-file "$PACKAGE_FILE" --package "$PACKAGE" --mount-directory "$MOUNT_DIRECTORY" $plugins_with_arguments 

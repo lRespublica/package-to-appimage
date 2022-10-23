@@ -96,8 +96,8 @@ done
 if [ "$DISTRIBUTION" = "" ]
     then printf "\tPlease, specify the distro\n"; exit 1;
     elif [ "$DISTRIBUTION" = "ubuntu" ]
-        then DOCKER_IMAGE="ubuntu:rolling"
-    elif [ "$DISTRIBUTION" = "debain" ]
+        then DOCKER_IMAGE="ubuntu"
+    elif [ "$DISTRIBUTION" = "debian" ]
         then DOCKER_IMAGE="debian:testing"
     elif [ "$DISTRIBUTION" = "opensuse" ]
         then DOCKER_IMAGE="opensuse/leap"
@@ -122,7 +122,7 @@ case "$DISTRIBUTION" in
                             PACKAGE_MANAGER_REPO_INSTALL="urpmi --auto" ;;
 
     "ubuntu" | "debian")    PACKAGE_MANAGER_UPDATE="apt-get update"
-                            PACKAGE_MANAGER_REPO_INSTALL="apt-get install -y "
+                            PACKAGE_MANAGER_REPO_INSTALL="apt-get install --fix-missing -y "
                             printf "ENV DEBIAN_FRONTEND=noninteractive\n" >> $DOCKERFILE ;;
 esac
 
@@ -155,7 +155,7 @@ for plugin in ${PLUGINS[*]}
         elif [ "$DISTRIBUTION" = "mageia" ]
         then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL libqwt-qt5-devel" >> $DOCKERFILE
         elif [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]
-        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL qtbase5-dev qtbase5-dev-tools qtpositioning5-dev libqt5sql5-mysql libqt5texttospeech5-dev" >> $DOCKERFILE
+        then echo "RUN $PACKAGE_MANAGER_REPO_INSTALL qtbase5-dev qtbase5-dev-tools qtpositioning5-dev libqt5sql5-mysql libqt5texttospeech5-dev libqt5multimedia5-plugins" >> $DOCKERFILE
         fi
 
 
@@ -198,4 +198,4 @@ for plugin in ${PLUGINS[*]}
     fi
 done
 
-docker build -t package-to-appimage/$DOCKER_IMAGE$plugins_with_arguments $DOCKERFILE_DIR
+docker build -t "package-to-appimage$plugins_with_arguments-$DOCKER_IMAGE" $DOCKERFILE_DIR

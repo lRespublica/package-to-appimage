@@ -20,12 +20,13 @@ Help command output:
 >        --plugin [plugin]                        specify the plugin to use
 >                                                 available plugins - qt gtk ncurses gstreamer
 >        --mount-directory                        specify directory for mounting into docker
+>		 --kde                                    use for applications with kde. Includes some libraries in the image
 >
->        --use-existants-container               use existance container, you need to create it before with "package-to-appimage-create-docker-image"
->         -E
+>        /--use-existants-container               use existance container, you need to create it before with "package-to-appimage-create-docker-image"
+>        \-E
 
 Example of usage:
-> ~/Projects/package-into-appimage/package-to-appimage.sh --package /tmp/xfce4-terminal-0.8.10-alt1.x86_64.rpm --plugin gstreamer -E --mount-directory /tmp/mnt   
+> ~/Projects/package-into-appimage/package-to-appimage --package /tmp/xfce4-terminal-0.8.10-alt1.x86_64.rpm --plugin gstreamer -E --mount-directory /tmp/mnt   
 
 Usage of *"-E"*  parameter is **highly** recomended. __Warning__, it creates new docker images on your computer.
 

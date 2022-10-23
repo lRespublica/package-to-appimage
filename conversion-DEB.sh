@@ -172,7 +172,7 @@ if [ "$ICON" = "$TMPDIR/AppDir" ]
         ICON_NAME="$PACKAGE"
     fi
     mkdir $TMPDIR/AppDir/usr/share/icons
-    cp /usr/share/icons/Adwaita/256x256/legacy/user-info.png $TMPDIR/AppDir/usr/share/icons/"$ICON_NAME".png
+    cp /usr/share/icons/Adwaita/64x64/emotes/face-confused-symbolic.symbolic.png $TMPDIR/AppDir/usr/share/icons/"$ICON_NAME".png
     ICON="$TMPDIR/AppDir/usr/share/icons/$ICON_NAME.png"
 fi
 
