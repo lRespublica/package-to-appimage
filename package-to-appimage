@@ -14,11 +14,11 @@ function help()
 # Checking if the plugin is correct
 function plugin_is_correct()
 {
-    if [[ $# -eq 1 ]]
+    if [ $# -eq 1 ]
     then 
         for plugin in qt python gtk ncurses gstreamer
         do 
-            if [[ "$1" = "$plugin" ]]
+            if [ "$1" = "$plugin" ]
                 then echo 1; exit;
             fi
         done
@@ -75,7 +75,7 @@ do
                 fi;
                 shift;shift;;
 
-    --plugin)  if [ -n "$2" ] && [[ $(plugin_is_correct "$2") = "1" ]]
+    --plugin)  if [ -n "$2" ] && [ $(plugin_is_correct "$2") = "1" ]
                     then PLUGINS[PLUGINS_COUNT]="$2";
                         PLUGINS_COUNT=$((PLUGINS_COUNT + 1));
 
@@ -125,7 +125,7 @@ mkdir $MOUNT_DIRECTORY
 
 # Copying package file
 cp "$PACKAGE" $MOUNT_DIRECTORY
-cp -t $MOUNT_DIRECTORY "$(dirname "$0")"/conversion*.sh "$(dirname "$0")"/unpack.sh
+cp -t $MOUNT_DIRECTORY "$(dirname "$0")"/conversion.sh "$(dirname "$0")"/unpack.sh
 # Saving name of package
 PACKAGE_FILE=$(echo "$PACKAGE" | awk -F / '{print $NF}')
 
@@ -232,5 +232,5 @@ docker run -ti --rm -v "$MOUNT_DIRECTORY/:/mnt" --security-opt seccomp=unconfine
 --package "$PACKAGE_NAME" --distribution "$DISTRIBUTION" --mount-directory "$MOUNT_DIRECTORY" $plugins_with_arguments $KDE_ENABLED
 
 rm -f $MOUNT_DIRECTORY/"$PACKAGE_FILE"
-rm -f $MOUNT_DIRECTORY/conversion*.sh
+rm -f $MOUNT_DIRECTORY/conversion.sh
 rm -f $MOUNT_DIRECTORY/unpack.sh

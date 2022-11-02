@@ -102,7 +102,7 @@ quiet echo "$PACKAGES"
 if [ "$UNPACK_DIRECTORY" = "" ]
     then 
     printf "Please, specify directory with -D [/path/to/directory]\n"
-    exit 1;
+    exit 1;zzz
 fi
 
 if [ "$PACKAGES" = "" ]

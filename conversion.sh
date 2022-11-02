@@ -3,7 +3,7 @@
 # Checking if the plugin is correct
 function plugin_is_correct()
 {
-    if [[ $# -eq 1 ]]
+    if [ $# -eq 1 ]
     then 
         for plugin in qt python gtk ncurses gstreamer
         do 
@@ -90,7 +90,7 @@ do
                 fi;
                 shift;shift;;
 
-    --plugin)  if [ -n "$2" ] && [[ $(plugin_is_correct "$2") = "1" ]]
+    --plugin)  if [ -n "$2" ] && [ "$(plugin_is_correct "$2")" = "1" ]
                     then PLUGINS[PLUGINS_COUNT]="$2";
                         PLUGINS_COUNT=$((PLUGINS_COUNT + 1));
 
@@ -113,7 +113,7 @@ for plugin in ${PLUGINS[*]}
 done
 
 # Fixes the name of the distribution by removing the docker tag from there
-DISTRIBUTION=$(echo "$DISTRIBUTION" | awk -F : '{ print $1 }')
+DISTRIBUTION=$(printf "$DISTRIBUTION" | cut -d ':' -f 1)
 
 if [ "$DISTRIBUTION" = "ubuntu" ] || [ "$DISTRIBUTION" = "debian" ]   
 then
@@ -225,14 +225,14 @@ done
 mkdir $TMPDIR/AppDir
 
 # Unpack package
-/mnt/unpack.sh -D $TMPDIR/AppDir --with-dependencies --package-type $PACKAGE_TYPE "$PACKAGE"
+/mnt/unpack.sh -D $TMPDIR/AppDir --with-dependencies --package-type $PACKAGE_TYPE "$PACKAGE" &> /dev/null
 
 if [ "$KDE_ENABLED" != "" ]
 then
     if [ "$DISTRIBUTION" = "alt"  ]
     then
         $PACKAGE_MANAGER_REPO_INSTALL kde5-runtime
-        /mnt/unpack.sh --package-type $PACKAGE_TYPE -D $TMPDIR/AppDir -q --with-dependencies kde5-runtime
+        /mnt/unpack.sh --package-type $PACKAGE_TYPE -D $TMPDIR/AppDir -q --with-dependencies kde5-runtime &> /dev/null
     fi
 
     if [ "$PACKAGE_TYPE" == "RPM" ]
@@ -244,5 +244,96 @@ then
     fi
 fi
 
-# Starting conversion
-/mnt/conversion-"$PACKAGE_TYPE".sh --package-file "$PACKAGE_FILE" --package "$PACKAGE" --mount-directory "$MOUNT_DIRECTORY" $plugins_with_arguments 
+if [ "$PACKAGE_TYPE" = "RPM" ]
+then
+    GET_FILES_LIST_COMMAND="rpmquery --list"
+elif [ "$PACKAGE_TYPE" = "DEB" ]
+then
+    GET_FILES_LIST_COMMAND="dpkg -L"
+else
+    printf "Error unknown package type $PACKAGE_TYPE\n"
+fi
+
+# Getting desktop file of package
+DESKTOP_FILE+="$TMPDIR/AppDir"
+DESKTOP_FILE+=$($GET_FILES_LIST_COMMAND "$PACKAGE" | grep -e "application" | grep -e ".desktop" -m 1)
+
+# Parsing it for executable, icon and name
+PACKAGE_NAME=$(cat "$DESKTOP_FILE" | grep -e ^Exec= -m 1 | sed 's/Exec=//g' | cut -d' ' -f1 | sed 's/ /_/g')
+
+PACKAGE_TITLE=$(cat "$DESKTOP_FILE" | grep -e ^Name= -m 1 | sed 's/Name=//g')
+
+ICON_NAME=$(cat "$DESKTOP_FILE" | grep -e ^Icon= -m 1 | sed 's/Icon=//g')
+
+ICON+="$TMPDIR/AppDir"
+ICON+=$($GET_FILES_LIST_COMMAND "$PACKAGE" | grep -e "icon" | grep -v "1024x1024" | grep -e "$ICON_NAME".png -m 1)
+
+# WARNING, IT IS A KLUDGE
+if [ -f "$ICON_NAME" ]                                                                                              # If icon name is a file
+then                                                                                                                # For case like "/usr/share/icons/breeze/applets/16/car.svg"
+    ICON=$TMPDIR/AppDir$(printf "$ICON_NAME" | sed 's/\/[^/]*$//')/"$PACKAGE".$(echo "$ICON_NAME" | sed 's/^.*\.//')     # New icon file should have be in same dir with older one, and have same extension, but different name
+    mv $TMPDIR/AppDir"$ICON_NAME" "$ICON"                                                                              # Move icon with same name as package. Required for auto-generated .desktop file
+    ICON_NAME=$PACKAGE                                                                                              # Turn "/usr/share/icons/breeze/applets/16/car.svg" into "car"
+    DESKTOP_FILE="$TMPDIR/AppDir"                                                                                      # Clean desktop file, instead of the existing one create a new one
+fi
+# END OF WARNING          
+
+# Finding executable and icon files
+EXECUTABLE+="$TMPDIR/AppDir"
+EXECUTABLE+=$($GET_FILES_LIST_COMMAND $PACKAGE | grep -e /bin/ | grep -e "$PACKAGE_NAME$" -m 1 )
+
+if [ "$EXECUTABLE" = "$TMPDIR/AppDir" ]
+    then
+    printf "Executable not found, searching by the name of package...\n"
+    EXECUTABLE+=$($GET_FILES_LIST_COMMAND "$PACKAGE" | grep -e /bin/ | grep -e "$PACKAGE$" -m 1)
+
+    # Clear desktop file information to create a new one when creating appimage
+    DESKTOP_FILE="$TMPDIR/AppDir"
+    PACKAGE_NAME=$PACKAGE
+    
+    if [ "$EXECUTABLE" = "$TMPDIR/AppDir" ]
+        then
+        printf "Executable not found, appimage creation aborted...\n"
+        exit 1
+    fi
+fi
+
+# If icon is not found
+if [ "$ICON" = "$TMPDIR/AppDir" ]
+    then
+    # Set adwaita icon as default
+    # If there are no Icon name
+    if [ "$ICON_NAME" = "" ]
+        then
+        # Set same name like package
+        ICON_NAME="$PACKAGE"
+    fi
+    mkdir $TMPDIR/AppDir/usr/share/icons
+    cp /usr/share/icons/Adwaita/512x512/places/folder-documents.png $TMPDIR/AppDir/usr/share/icons/"$ICON_NAME".png
+    ICON="$TMPDIR/AppDir/usr/share/icons/$ICON_NAME.png"
+fi
+
+# If desktop file not contains "Categories" key value, then use --create-desktop-file flag for linuxdeploy
+if [ "$(grep -e "Categories=" $DESKTOP_FILE)" = "" ]
+then
+    DESKTOP_FILE="$TMPDIR/AppDir"
+fi
+
+LINUXDEPLOY=$TMPDIR/linuxdeploy/AppRun 
+
+# If there are no desktop file
+if [ "$DESKTOP_FILE" = "$TMPDIR/AppDir" ]
+    then
+    # Use --create-desktop-file option
+    printf "$TMPDIR/linuxdeploy/AppRun --appdir $TMPDIR/AppDir --executable $EXECUTABLE --create-desktop-file --icon-file $ICON $plugins_with_arguments --output appimage\n"
+    cd $TMPDIR && $LINUXDEPLOY --appdir $TMPDIR/AppDir/ --executable "$EXECUTABLE" --create-desktop-file --icon-file "$ICON" $plugins_with_arguments --output appimage
+else
+    # Use .desktop file if it exists
+    printf "$TMPDIR/linuxdeploy/AppRun --appdir $TMPDIR/AppDir --executable $EXECUTABLE --desktop-file $DESKTOP_FILE --icon-file $ICON $plugins_with_arguments --output appimage\n"
+    cd $TMPDIR && $LINUXDEPLOY --appdir $TMPDIR/AppDir/ --executable "$EXECUTABLE" --desktop-file "$DESKTOP_FILE" --icon-file "$ICON" $plugins_with_arguments --output appimage
+fi
+
+# Copy AppImage file to host directory
+cp $TMPDIR/*.AppImage /mnt/
+
+printf "\n\nNow you can find your AppImage in $MOUNT_DIRECTORY/$(ls /mnt/ | grep -e "$PACKAGE_TITLE" -m 1)\n"

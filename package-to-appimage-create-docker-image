@@ -10,11 +10,11 @@ function help()
 # Checking if the plugin is correct
 function plugin_is_correct()
 {
-    if [[ $# -eq 1 ]]
+    if [ $# -eq 1 ]
     then 
         for plugin in qt python gtk ncurses gstreamer
         do 
-            if [[ "$1" = "$plugin" ]]
+            if [ "$1" = "$plugin" ]
                 then echo 1; exit;
             fi
         done
@@ -25,11 +25,11 @@ function plugin_is_correct()
 
 function distro_is_correct()
 {
-    if [[ $# -eq 1 ]]
+    if [ $# -eq 1 ]
     then 
         for plugin in alt fedora opensuse centos mageia ubuntu debian
         do 
-            if [[ "$1" = "$plugin" ]]
+            if [ "$1" = "$plugin" ]
                 then echo 1; exit;
             fi
         done
@@ -64,7 +64,7 @@ fi
 while [ "$1" != "" ]
 do
     case "$1" in 
-    --distribution) if [ -n "$2" ] && [ $(distro_is_correct "$2") = "1" ]
+    --distribution) if [ -n "$2" ] && [ "$(distro_is_correct "$2")" = "1" ]
                     then DISTRIBUTION="$2";
 
                     else printf "\tPlease, specify the distro\n"; exit 1;
@@ -72,7 +72,7 @@ do
                 shift;shift;;
 
 
-    --plugin)  if [ -n "$2" ] && [[ $(plugin_is_correct "$2") = "1" ]]
+    --plugin)  if [ -n "$2" ] && [ "$(plugin_is_correct "$2")" = "1" ]
                     then PLUGINS[PLUGINS_COUNT]="$2";
                         PLUGINS_COUNT=$((PLUGINS_COUNT + 1));
 
